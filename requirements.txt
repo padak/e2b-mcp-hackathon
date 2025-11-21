@@ -1,4 +1,0 @@
-anthropic
-e2b-code-interpreter
-pydantic
-python-dotenv
