@@ -51,18 +51,22 @@ def create_sandbox_with_ui():
 
     # Install required packages
     print("Installing dependencies...", flush=True)
-    sandbox.commands.run("pip install flask claude-agent-sdk", timeout=120)
+    sandbox.commands.run("pip install flask claude-agent-sdk e2b-code-interpreter python-dotenv", timeout=180)
     print("Dependencies installed!", flush=True)
 
-    # Set the Anthropic API key in the sandbox environment
+    # Set API keys for the sandbox environment
     anthropic_key = os.getenv('ANTHROPIC_API_KEY')
+    e2b_key = os.getenv('E2B_API_KEY')
+
     if not anthropic_key:
         print("WARNING: ANTHROPIC_API_KEY not set - agent tasks will fail!", flush=True)
+    if not e2b_key:
+        print("WARNING: E2B_API_KEY not set - sandbox creation will fail!", flush=True)
 
-    # Start the Flask server in background
+    # Start the Flask server in background with both API keys
     print("Starting Flask UI server...", flush=True)
     flask_process = sandbox.commands.run(
-        f"ANTHROPIC_API_KEY={anthropic_key} python -u /home/user/ui_server.py",
+        f"ANTHROPIC_API_KEY={anthropic_key} E2B_API_KEY={e2b_key} python -u /home/user/ui_server.py",
         background=True
     )
 
