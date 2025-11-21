@@ -27,7 +27,7 @@ def create_sandbox_with_ui():
     """Create and configure the E2B sandbox with web UI."""
 
     print("Creating E2B sandbox...", flush=True)
-    sandbox = Sandbox.create(timeout=600)  # 10 minutes
+    sandbox = Sandbox.create(timeout=1800)  # 30 minutes
 
     info = sandbox.get_info()
     print(f"Sandbox created: {info.sandbox_id}", flush=True)
@@ -109,9 +109,9 @@ def main():
         # Keep sandbox alive until user interrupts
         print("Sandbox is running. Waiting for interactions...", flush=True)
         while True:
-            time.sleep(10)
-            # Optionally extend timeout to keep sandbox alive longer
-            sandbox.set_timeout(300)  # Reset to 5 more minutes
+            time.sleep(30)
+            # Extend timeout to keep sandbox alive longer
+            sandbox.set_timeout(1800)  # Reset to 30 more minutes
 
     except KeyboardInterrupt:
         print("\n\nShutting down...", flush=True)

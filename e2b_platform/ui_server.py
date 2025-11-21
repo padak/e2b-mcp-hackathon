@@ -2,11 +2,41 @@
 Simple Flask UI server - runs inside E2B sandbox
 Provides a button to trigger Claude Agent SDK task in another sandbox
 """
-from flask import Flask, render_template_string, jsonify, request
+from flask import Flask, render_template_string, jsonify, request, make_response
 import subprocess
 import os
+import traceback
 
 app = Flask(__name__)
+
+
+# Add CORS headers to all responses
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+
+# Handle OPTIONS preflight requests
+@app.route('/run-agent', methods=['OPTIONS'])
+def options_run_agent():
+    response = make_response()
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+
+# Global error handler to always return JSON
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({
+        'success': False,
+        'error': str(e),
+        'traceback': traceback.format_exc()
+    }), 500
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
