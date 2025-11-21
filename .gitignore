@@ -8,6 +8,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 *.so
 .Python
 venv/
@@ -39,4 +40,4 @@ secrets.json
 *_secrets.json
 
 # Claude
-.claude
+.claude/
