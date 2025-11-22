@@ -32,8 +32,9 @@ def create_sandbox_sync(verbose: bool = True) -> Sandbox:
         logger.debug(f"E2B_API_KEY present: {bool(os.getenv('E2B_API_KEY'))}")
 
     try:
+        # Note: Don't use custom template with MCP - need mcp-gateway binary
+        # Dependencies will be installed in sandbox
         sbx = Sandbox.create(
-            template="mesa-mcp-gateway",
             timeout=300,  # 5 minutes
             mcp={
                 "perplexityAsk": {
