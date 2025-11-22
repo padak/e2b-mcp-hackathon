@@ -203,8 +203,8 @@ def execute_monte_carlo_sync(
         current_code
     )
 
-    # Auto-calibrate threshold if enabled
-    if auto_calibrate:
+    # Auto-calibrate threshold if enabled (skip in probability mode - threshold not used)
+    if auto_calibrate and simulation_mode != "probability":
         logger.info(f"Running calibration with {n_calibration} runs...")
 
         # Create calibration code - replaces the main block to output calibration data
