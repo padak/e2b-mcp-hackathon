@@ -19,10 +19,9 @@ class TestOrchestratorImports:
 
     def test_import_cli(self):
         """Test CLI module imports."""
-        from src.cli import display_markets, run_simulation, main_menu
+        from src.cli import display_markets, main
         assert display_markets is not None
-        assert run_simulation is not None
-        assert main_menu is not None
+        assert main is not None
 
 
 class TestSimulationRun:
@@ -97,17 +96,17 @@ class TestCLIHelpers:
         """Test that display_markets handles market data."""
         from src.cli import display_markets
 
-        markets = [{"test": "data"}]
-        formatted = [{
+        markets = [{
             "question": "Will something happen?",
-            "yes_odds": 0.65,
+            "yes_price": 0.65,
+            "no_price": 0.35,
             "volume": 50000
         }]
 
         # Just verify it doesn't crash
         # Output goes to console, we're not capturing it
         try:
-            display_markets(markets, formatted)
+            display_markets(markets, "Test Markets")
         except Exception as e:
             pytest.fail(f"display_markets raised {e}")
 
