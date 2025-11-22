@@ -153,7 +153,8 @@ src/
 ```python
 # Core
 anthropic              # Claude API
-e2b-code-interpreter   # Sandbox execution
+e2b                    # Sandbox execution
+mcp                    # MCP client
 httpx                  # HTTP client
 
 # Simulation
