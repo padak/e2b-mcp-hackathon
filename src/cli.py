@@ -85,15 +85,6 @@ async def run_simulation(market: dict) -> None:
         loop = asyncio.get_event_loop()
 
         try:
-            # Install dependencies (MCP sandbox doesn't have mesa pre-installed)
-            progress.update(task, description="Installing dependencies...")
-            await loop.run_in_executor(
-                None, lambda: sbx.commands.run(
-                    'pip install -q mesa==2.1.5 numpy pandas plotly',
-                    timeout=120
-                )
-            )
-
             # Research
             progress.update(task, description="Researching with Perplexity...")
             research_query = f"""
