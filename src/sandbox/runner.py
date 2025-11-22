@@ -54,5 +54,36 @@ print('Mesa, pandas, numpy imported successfully!')
         await sbx.kill()
 
 
+async def test_perplexity_mcp():
+    """Test Perplexity search via MCP gateway."""
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    from src.mcp.client import create_mcp_client, search
+
+    sbx = await create_sandbox()
+
+    try:
+        print("Connecting to MCP gateway...")
+        async with create_mcp_client(sbx) as session:
+            # List available tools
+            tools = await session.list_tools()
+            print(f"Available tools: {[t.name for t in tools.tools]}")
+
+        # Test search
+        print("\nSearching for Fed interest rate decision...")
+        result = await search(sbx, "Fed interest rate decision December 2024")
+        print(f"Search result:\n{result[:500]}..." if len(result) > 500 else f"Search result:\n{result}")
+
+        return True
+
+    finally:
+        await sbx.kill()
+
+
 if __name__ == "__main__":
-    asyncio.run(test_sandbox())
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "mcp":
+        asyncio.run(test_perplexity_mcp())
+    else:
+        asyncio.run(test_sandbox())

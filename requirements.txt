@@ -10,3 +10,5 @@ mesa
 numpy
 pandas
 py-clob-client
+pytest
+pytest-asyncio

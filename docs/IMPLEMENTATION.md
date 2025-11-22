@@ -114,7 +114,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 3: Perplexity MCP Client
 
-- [ ] **3.1** Create `src/mcp/client.py`
+- [x] **3.1** Create `src/mcp/client.py`
   - Connect to E2B MCP gateway from outside sandbox
   ```python
   from mcp.client.session import ClientSession
@@ -129,13 +129,13 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
           tools = await session.list_tools()
   ```
 
-- [ ] **3.2** Create wrapper for Perplexity search
+- [x] **3.2** Create wrapper for Perplexity search
   - Function: `search(query: str) -> str`
-  - Call `perplexity_ask` tool via MCP
+  - Call `perplexity-ask-perplexity_ask` tool via MCP
 
-- [ ] **3.3** Test Perplexity via MCP
+- [x] **3.3** Test Perplexity via MCP
   ```python
-  result = await search("Fed interest rate decision December 2024")
+  result = await search(sbx, "Fed interest rate decision December 2024")
   # Should return relevant news/data from Perplexity
   ```
 
