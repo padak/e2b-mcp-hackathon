@@ -19,18 +19,20 @@ Started as n8n → E2B workflow migration tool. OAuth hell killed that in 2 hour
 │         ↓                                                                │
 │  2. GENERATE        Claude Agent → writes complete Mesa simulation       │
 │         ↓                                                                │
-│  3. CALIBRATE       50 runs → find optimal threshold, fix low variance   │
+│  3. SELF-HEAL       Error? → Claude fixes code → retry (up to 5x)        │
 │         ↓                                                                │
-│  4. SIMULATE        200 Monte Carlo runs → probability distribution      │
+│  4. CALIBRATE       50 runs → find optimal threshold, fix low variance   │
 │         ↓                                                                │
-│  5. SELF-HEAL       Error? → Claude fixes code → retry (up to 5x)        │
+│  5. SIMULATE        200 Monte Carlo runs → probability distribution      │
+│         ↓                                                                │
+│  6. VISUALS         Show results, go bet a fortune                       │
 │                                                                          │
 └──────────────────────────────────────────────────────────────────────────┘
          ↓
     Compare with Polymarket odds → Interactive Plotly dashboard
 ```
 
-**Key insight**: Claude doesn't tweak parameters—it writes **complete simulation code** with custom agents, behaviors, and outcome logic for each question.
+**Key insight**: Claude doesn't tweak parameters—it writes **complete simulation code** with custom agents, behaviors, and outcome logic for each question. Runs them safely in sandboxes.
 
 ## Example: Ukraine-Russia Ceasefire
 
