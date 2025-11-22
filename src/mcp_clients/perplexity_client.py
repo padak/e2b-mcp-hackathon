@@ -3,21 +3,21 @@
 from contextlib import asynccontextmanager
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
-from e2b import AsyncSandbox
+from e2b_code_interpreter import Sandbox
 
 
 @asynccontextmanager
-async def create_mcp_client(sandbox: AsyncSandbox):
+async def create_mcp_client(sandbox: Sandbox):
     """Create and connect an MCP client to the sandbox.
 
     Args:
-        sandbox: E2B AsyncSandbox with MCP enabled
+        sandbox: E2B Sandbox with MCP enabled
 
     Yields:
         Connected ClientSession
     """
     mcp_url = sandbox.get_mcp_url()
-    mcp_token = await sandbox.get_mcp_token()
+    mcp_token = sandbox.get_mcp_token()  # Sync in e2b_code_interpreter
 
     async with streamablehttp_client(
         url=mcp_url,
@@ -28,11 +28,11 @@ async def create_mcp_client(sandbox: AsyncSandbox):
             yield session
 
 
-async def search(sandbox: AsyncSandbox, query: str) -> str:
+async def search(sandbox: Sandbox, query: str) -> str:
     """Search Perplexity via MCP.
 
     Args:
-        sandbox: E2B AsyncSandbox with MCP enabled
+        sandbox: E2B Sandbox with MCP enabled
         query: Search query string
 
     Returns:

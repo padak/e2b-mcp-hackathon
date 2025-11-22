@@ -2,24 +2,103 @@
 
 import os
 import asyncio
-from e2b import AsyncSandbox
+import logging
+from e2b_code_interpreter import Sandbox
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Setup logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%H:%M:%S'
+)
+logger = logging.getLogger('e2b-runner')
 
-async def create_sandbox() -> AsyncSandbox:
-    """Create E2B sandbox with Perplexity MCP enabled."""
-    sbx = await AsyncSandbox.create(
-        template="code-interpreter-v1",
-        timeout=300,  # 5 minutes
-        mcp={
-            "perplexityAsk": {
-                "perplexityApiKey": os.getenv("PERPLEXITY_API_KEY"),
-            },
-        }
-    )
+
+def create_sandbox_sync(verbose: bool = True) -> Sandbox:
+    """Create E2B sandbox with Perplexity MCP enabled (sync version).
+
+    Args:
+        verbose: Enable detailed logging
+
+    Returns:
+        Sandbox with MCP gateway configured
+    """
+    if verbose:
+        logger.info("Creating E2B sandbox with MCP gateway...")
+        logger.debug(f"PERPLEXITY_API_KEY present: {bool(os.getenv('PERPLEXITY_API_KEY'))}")
+        logger.debug(f"E2B_API_KEY present: {bool(os.getenv('E2B_API_KEY'))}")
+
+    try:
+        sbx = Sandbox.create(
+            timeout=300,  # 5 minutes
+            mcp={
+                "perplexityAsk": {
+                    "perplexityApiKey": os.getenv("PERPLEXITY_API_KEY"),
+                },
+            }
+        )
+
+        if verbose:
+            logger.info(f"Sandbox created: {sbx.sandbox_id}")
+            mcp_url = sbx.get_mcp_url()
+            logger.info(f"MCP Gateway URL: {mcp_url}")
+
+        return sbx
+
+    except Exception as e:
+        logger.error(f"Failed to create sandbox: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        raise
+
+
+async def create_sandbox(verbose: bool = True) -> Sandbox:
+    """Create E2B sandbox with Perplexity MCP enabled (async wrapper).
+
+    Args:
+        verbose: Enable detailed logging
+
+    Returns:
+        Sandbox with MCP gateway configured
+    """
+    # Run sync creation in thread pool
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, create_sandbox_sync, verbose)
+
+
+def create_sandbox_without_mcp_sync(verbose: bool = True) -> Sandbox:
+    """Create E2B sandbox without MCP (for code execution only).
+
+    Args:
+        verbose: Enable detailed logging
+
+    Returns:
+        Sandbox for code execution
+    """
+    if verbose:
+        logger.info("Creating E2B sandbox without MCP...")
+
+    sbx = Sandbox.create(timeout=300)
+
+    if verbose:
+        logger.info(f"Sandbox created: {sbx.sandbox_id}")
+
     return sbx
+
+
+async def create_sandbox_without_mcp(verbose: bool = True) -> Sandbox:
+    """Create E2B sandbox without MCP (async wrapper).
+
+    Args:
+        verbose: Enable detailed logging
+
+    Returns:
+        Sandbox for code execution
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, create_sandbox_without_mcp_sync, verbose)
 
 
 async def test_sandbox():
@@ -59,7 +138,7 @@ async def test_perplexity_mcp():
     """Test Perplexity search via MCP gateway."""
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-    from src.mcp.client import create_mcp_client, search
+    from src.mcp_clients.perplexity_client import create_mcp_client, search
 
     sbx = await create_sandbox()
 

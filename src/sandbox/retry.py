@@ -3,12 +3,17 @@ Retry loop and Monte Carlo execution for E2B sandbox.
 """
 
 import os
+import asyncio
+import logging
 from dataclasses import dataclass
 from typing import Optional
-from e2b import AsyncSandbox
+from e2b_code_interpreter import Sandbox
+from e2b.sandbox.commands.command_handle import CommandExitException
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger('e2b-retry')
 
 
 @dataclass
@@ -24,14 +29,14 @@ class ExecutionResult:
     used_fallback: bool = False
 
 
-async def execute_with_retry(
-    sbx: AsyncSandbox,
+def execute_with_retry_sync(
+    sbx: Sandbox,
     code: str,
     max_retries: int = 5,
     fallback_code: Optional[str] = None
 ) -> ExecutionResult:
     """
-    Execute code in E2B sandbox with retry on error.
+    Execute code in E2B sandbox with retry on error (sync version).
 
     On error, sends error + code to LLM for fix.
     Returns success result or fallback to reference model.
@@ -45,39 +50,48 @@ async def execute_with_retry(
     Returns:
         ExecutionResult with output or error
     """
-    from src.generator.fixer import fix_code
+    from src.generator.fixer import fix_code_sync
 
     current_code = code
     last_error = None
 
     for attempt in range(max_retries):
-        # Write code to sandbox
-        await sbx.files.write('/tmp/simulation.py', current_code)
+        # Write code to sandbox - use unique filename to avoid permission issues
+        filename = f'/tmp/simulation_{attempt}.py'
+        sbx.files.write(filename, current_code)
 
-        # Execute
-        result = await sbx.commands.run('python3 /tmp/simulation.py', timeout=120)
+        # Execute - catch exception on non-zero exit
+        try:
+            result = sbx.commands.run(f'python3 {filename}', timeout=120)
 
-        if result.exit_code == 0:
-            # Success - parse output
-            return ExecutionResult(
-                success=True,
-                output=result.stdout,
-                error=None
-            )
+            if result.exit_code == 0:
+                # Success - parse output
+                return ExecutionResult(
+                    success=True,
+                    output=result.stdout,
+                    error=None
+                )
 
-        # Error - try to fix
-        last_error = result.stderr or result.stdout
-        print(f"Attempt {attempt + 1}/{max_retries} failed: {last_error[:200]}...")
+            # Non-zero exit without exception
+            last_error = result.stderr or result.stdout
+
+        except CommandExitException as e:
+            # E2B raises this on non-zero exit
+            last_error = str(e)
+
+        logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {last_error[:300]}...")
 
         if attempt < max_retries - 1:
             # Ask LLM to fix the code
-            current_code = await fix_code(current_code, last_error)
+            logger.info(f"Calling fixer to repair code...")
+            current_code = fix_code_sync(current_code, last_error)
+            logger.info(f"Fixer returned {len(current_code)} chars of code")
 
     # All retries failed - use fallback if provided
     if fallback_code:
-        print("All retries failed, using fallback model...")
-        await sbx.files.write('/tmp/simulation.py', fallback_code)
-        result = await sbx.commands.run('python3 /tmp/simulation.py', timeout=120)
+        logger.warning("All retries failed, using fallback model...")
+        sbx.files.write('/tmp/simulation.py', fallback_code)
+        result = sbx.commands.run('python3 /tmp/simulation.py', timeout=120)
 
         if result.exit_code == 0:
             return ExecutionResult(
@@ -92,6 +106,19 @@ async def execute_with_retry(
         success=False,
         output="",
         error=last_error
+    )
+
+
+async def execute_with_retry(
+    sbx: Sandbox,
+    code: str,
+    max_retries: int = 5,
+    fallback_code: Optional[str] = None
+) -> ExecutionResult:
+    """Async wrapper for execute_with_retry_sync."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, execute_with_retry_sync, sbx, code, max_retries, fallback_code
     )
 
 
@@ -123,100 +150,60 @@ def run_monte_carlo(run_trial_results: list[bool], n_runs: int = 200) -> dict:
     }
 
 
-async def execute_monte_carlo(
-    sbx: AsyncSandbox,
+def execute_monte_carlo_sync(
+    sbx: Sandbox,
     code: str,
     n_runs: int = 200,
     max_retries: int = 5,
     fallback_code: Optional[str] = None
 ) -> ExecutionResult:
     """
-    Execute Monte Carlo simulation with retry loop.
+    Execute Monte Carlo simulation with retry loop (sync version).
 
-    The code must define a run_trial(seed: int) -> bool function.
-    This wrapper runs it n_runs times and aggregates results.
+    The code should be a complete simulation that prints JSON output
+    with keys: probability, n_runs, results, ci_95
 
     Args:
         sbx: E2B sandbox instance
-        code: Python code with run_trial function
-        n_runs: Number of Monte Carlo runs
+        code: Complete Python simulation code
+        n_runs: Number of Monte Carlo runs (for fallback only)
         max_retries: Maximum retry attempts
         fallback_code: Fallback code if all retries fail
 
     Returns:
         ExecutionResult with aggregated probability
     """
-    # Wrap the code with Monte Carlo runner
-    monte_carlo_wrapper = f'''
-{code}
-
-# Monte Carlo execution
-import json
-
-results = []
-for seed in range({n_runs}):
-    try:
-        outcome = run_trial(seed)
-        results.append(1 if outcome else 0)
-    except Exception as e:
-        print(f"Trial {{seed}} failed: {{e}}", file=__import__('sys').stderr)
-        results.append(0)
-
-probability = sum(results) / len(results)
-ci_95 = 1.96 * (probability * (1 - probability) / {n_runs}) ** 0.5 if 0 < probability < 1 else 0
-
-output = {{
-    "probability": probability,
-    "n_runs": {n_runs},
-    "results": results,
-    "ci_95": ci_95
-}}
-print(json.dumps(output))
-'''
-
-    # Also prepare fallback wrapper if provided
-    fallback_wrapped = None
-    if fallback_code:
-        fallback_wrapped = f'''
-{fallback_code}
-
-# Monte Carlo execution
-import json
-
-results = []
-for seed in range({n_runs}):
-    try:
-        outcome = run_trial(seed)
-        results.append(1 if outcome else 0)
-    except Exception as e:
-        results.append(0)
-
-probability = sum(results) / len(results)
-ci_95 = 1.96 * (probability * (1 - probability) / {n_runs}) ** 0.5 if 0 < probability < 1 else 0
-
-output = {{
-    "probability": probability,
-    "n_runs": {n_runs},
-    "results": results,
-    "ci_95": ci_95
-}}
-print(json.dumps(output))
-'''
-
-    # Execute with retry
-    result = await execute_with_retry(sbx, monte_carlo_wrapper, max_retries, fallback_wrapped)
+    # Execute the generated code directly (it already has run_monte_carlo)
+    result = execute_with_retry_sync(sbx, code, max_retries, fallback_code)
 
     if result.success:
         # Parse the JSON output
         import json
         try:
-            data = json.loads(result.output.strip())
+            # Find the JSON in output (might have other prints)
+            output_lines = result.output.strip().split('\n')
+            json_line = output_lines[-1]  # JSON should be last line
+            data = json.loads(json_line)
             result.probability = data["probability"]
             result.ci_95 = data["ci_95"]
             result.n_runs = data["n_runs"]
             result.results = data["results"]
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, KeyError, IndexError) as e:
             result.success = False
-            result.error = f"Failed to parse output: {result.output}"
+            result.error = f"Failed to parse output: {result.output[:500]}... Error: {e}"
 
     return result
+
+
+async def execute_monte_carlo(
+    sbx: Sandbox,
+    code: str,
+    n_runs: int = 200,
+    max_retries: int = 5,
+    fallback_code: Optional[str] = None
+) -> ExecutionResult:
+    """Async wrapper for execute_monte_carlo_sync."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, execute_monte_carlo_sync, sbx, code, n_runs, max_retries, fallback_code
+    )

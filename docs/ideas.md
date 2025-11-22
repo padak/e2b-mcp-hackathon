@@ -19,3 +19,10 @@ Example markets:
 1. Simulate Fed rate decision impact on markets
 2. Model economic shock scenarios (recession probability)
 3. Compare simulation results with market consensus
+
+### Validation Strategy
+We could validate simulation accuracy by backtesting against resolved/closed markets on Polymarket:
+- Run simulations on historical markets where the outcome is already known
+- Compare our predicted probabilities with actual results
+- Track accuracy metrics over time (Brier score, calibration)
+- This provides empirical evidence that the agent-based models produce meaningful predictions

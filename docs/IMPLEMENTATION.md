@@ -340,11 +340,11 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 9: Orchestrator
 
-- [ ] **9.1** Create `src/orchestrator.py`
+- [x] **9.1** Create `src/orchestrator.py`
   - Connects all components
   - Flow: Polymarket → Perplexity Research → Generate → Execute → Visualize
 
-- [ ] **9.2** Create `src/cli.py`
+- [x] **9.2** Create `src/cli.py`
   - Interactive CLI with Rich
   - Menu: list markets, select market, run simulation
   - Display progress with Rich spinners/progress bars

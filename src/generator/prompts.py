@@ -5,14 +5,15 @@ Prompts for LLM model generation.
 MESA_TECHNICAL_SPEC = """
 ## Mesa 3.x API (CRITICAL - DO NOT USE DEPRECATED APIs)
 
-### Agent Creation
+### Agent Creation - CRITICAL
 ```python
 from mesa import Agent, Model
 from mesa.datacollection import DataCollector
 
 class MyAgent(Agent):
     def __init__(self, unique_id: int, model: "MyModel"):
-        super().__init__(model)  # Mesa 3.x: only model, no unique_id
+        # CRITICAL: Must pass model to super().__init__()
+        super().__init__(model)  # <-- REQUIRED! Will crash without model
         self.unique_id = unique_id  # store it yourself
         # your attributes here
 
@@ -20,6 +21,9 @@ class MyAgent(Agent):
         # agent behavior
         pass
 ```
+
+### CRITICAL: Every Agent subclass MUST call super().__init__(model)
+If you forget to pass model, you get: TypeError: __init__() missing 1 required positional argument: 'model'
 
 ### Model Creation
 ```python
@@ -156,10 +160,11 @@ def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5, **params):
     }}
 
 if __name__ == "__main__":
+    import json
     # Run with your chosen parameters
     results = run_monte_carlo(n_runs=200, threshold=0.5)
-    print(f"Probability: {{results['probability']:.1%}}")
-    print(f"95% CI: ±{{results['ci_95']:.1%}}")
+    # Print JSON output for parsing
+    print(json.dumps(results))
 ```
 
 ## Guidelines for Model Design

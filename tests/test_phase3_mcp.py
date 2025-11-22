@@ -2,7 +2,7 @@
 
 import pytest
 from src.sandbox.runner import create_sandbox
-from src.mcp.client import create_mcp_client, search
+from src.mcp_clients.perplexity_client import create_mcp_client, search
 
 
 @pytest.mark.asyncio

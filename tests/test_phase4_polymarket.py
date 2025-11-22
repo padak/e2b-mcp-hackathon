@@ -12,7 +12,7 @@ import importlib.util
 # Load polymarket module directly to avoid conflict with mcp package
 spec = importlib.util.spec_from_file_location(
     "polymarket",
-    os.path.join(os.path.dirname(__file__), '..', 'src', 'mcp', 'polymarket.py')
+    os.path.join(os.path.dirname(__file__), '..', 'src', 'mcp_clients', 'polymarket.py')
 )
 polymarket = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(polymarket)
