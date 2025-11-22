@@ -23,6 +23,7 @@ async def test_mcp_client_connection(check_api_keys):
 async def test_list_tools(check_api_keys):
     """Test listing available MCP tools."""
     sbx = await create_sandbox()
+    loop = asyncio.get_event_loop()
 
     try:
         async with create_mcp_client(sbx) as session:
@@ -33,13 +34,14 @@ async def test_list_tools(check_api_keys):
             # Check for Perplexity tools
             assert any("perplexity" in name.lower() for name in tool_names)
     finally:
-        await sbx.kill()
+        await loop.run_in_executor(None, sbx.kill)
 
 
 @pytest.mark.asyncio
 async def test_perplexity_search(check_api_keys):
     """Test Perplexity search via MCP."""
     sbx = await create_sandbox()
+    loop = asyncio.get_event_loop()
 
     try:
         result = await search(sbx, "What is 2+2?")
@@ -49,13 +51,14 @@ async def test_perplexity_search(check_api_keys):
         # Should contain some response
         assert isinstance(result, str)
     finally:
-        await sbx.kill()
+        await loop.run_in_executor(None, sbx.kill)
 
 
 @pytest.mark.asyncio
 async def test_perplexity_search_news(check_api_keys):
     """Test Perplexity search for news/current events."""
     sbx = await create_sandbox()
+    loop = asyncio.get_event_loop()
 
     try:
         result = await search(sbx, "Fed interest rate decision December 2024")
@@ -65,13 +68,14 @@ async def test_perplexity_search_news(check_api_keys):
         # Should contain relevant keywords
         assert any(word in result.lower() for word in ["fed", "rate", "percent", "interest"])
     finally:
-        await sbx.kill()
+        await loop.run_in_executor(None, sbx.kill)
 
 
 @pytest.mark.asyncio
 async def test_search_returns_string(check_api_keys):
     """Test that search returns a string."""
     sbx = await create_sandbox()
+    loop = asyncio.get_event_loop()
 
     try:
         result = await search(sbx, "Python programming language")
@@ -79,4 +83,4 @@ async def test_search_returns_string(check_api_keys):
         assert isinstance(result, str)
         assert len(result) > 10  # Should have some content
     finally:
-        await sbx.kill()
+        await loop.run_in_executor(None, sbx.kill)

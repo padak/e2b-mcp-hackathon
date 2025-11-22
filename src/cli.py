@@ -80,7 +80,36 @@ async def run_simulation(market: dict) -> None:
         from src.mcp_clients.perplexity_client import search
         from src.generator.generator import generate_model_async
         from src.sandbox.retry import execute_monte_carlo
-        from src.viz.plotter import create_chart
+        from src.viz.plotter import create_dashboard
+        import re
+
+        def extract_model_info(code: str) -> dict:
+            """Extract agent and parameter info from generated code."""
+            info = {"agents": [], "parameters": {}}
+
+            # Extract AGENT_CONFIG
+            config_match = re.search(r'AGENT_CONFIG\s*=\s*\{([^}]+)\}', code)
+            if config_match:
+                config_str = config_match.group(1)
+                for line in config_str.split(','):
+                    match = re.search(r'(\w+):\s*(\d+)', line)
+                    if match:
+                        agent_name = match.group(1)
+                        count = int(match.group(2))
+                        info["agents"].append({"name": agent_name, "count": count})
+
+            # Extract MODEL_PARAMS
+            params_match = re.search(r'MODEL_PARAMS\s*=\s*\{([^}]+)\}', code)
+            if params_match:
+                params_str = params_match.group(1)
+                for line in params_str.split(','):
+                    match = re.search(r'"(\w+)":\s*([^,\n]+)', line)
+                    if match:
+                        key = match.group(1)
+                        value = match.group(2).strip()
+                        info["parameters"][key] = value
+
+            return info
 
         # Create sandbox (with MCP for Perplexity)
         sbx = await create_sandbox()
@@ -140,7 +169,8 @@ async def run_simulation(market: dict) -> None:
                 "n_runs": result.n_runs,
                 "results": result.results
             }
-            html = create_chart(simulation_data, yes_odds, question)
+            model_info = extract_model_info(generated_code)
+            html = create_dashboard(simulation_data, yes_odds, question, model_info)
 
             # Save results locally
             progress.update(task, description="Saving results...")

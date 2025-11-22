@@ -88,10 +88,14 @@ class TestRetryLoopIntegration:
     @pytest.mark.asyncio
     async def test_execute_with_retry_success(self):
         """Test successful execution without retry."""
-        from e2b import AsyncSandbox
+        from e2b_code_interpreter import Sandbox
         from src.sandbox.retry import execute_with_retry
+        import asyncio
 
-        sbx = await AsyncSandbox.create(template="code-interpreter-v1", timeout=60)
+        loop = asyncio.get_event_loop()
+        sbx = await loop.run_in_executor(
+            None, lambda: Sandbox.create(template="code-interpreter-v1", timeout=60)
+        )
         try:
             code = '''
 print("Hello from test!")
@@ -101,15 +105,19 @@ print("Hello from test!")
             assert result.success
             assert "Hello from test!" in result.output
         finally:
-            await sbx.kill()
+            await loop.run_in_executor(None, sbx.kill)
 
     @pytest.mark.asyncio
     async def test_execute_with_retry_with_fix(self):
         """Test execution that needs fixing."""
-        from e2b import AsyncSandbox
+        from e2b_code_interpreter import Sandbox
         from src.sandbox.retry import execute_with_retry
+        import asyncio
 
-        sbx = await AsyncSandbox.create(template="code-interpreter-v1", timeout=120)
+        loop = asyncio.get_event_loop()
+        sbx = await loop.run_in_executor(
+            None, lambda: Sandbox.create(template="code-interpreter-v1", timeout=120)
+        )
         try:
             # Intentionally broken code
             broken_code = '''
@@ -122,18 +130,24 @@ print(undefined_variable)  # This will fail
             # The LLM should recognize and fix the undefined variable
             assert result.success or result.error is not None
         finally:
-            await sbx.kill()
+            await loop.run_in_executor(None, sbx.kill)
 
     @pytest.mark.asyncio
     async def test_execute_monte_carlo_basic(self):
         """Test Monte Carlo execution with simple trial function."""
-        from e2b import AsyncSandbox
+        from e2b_code_interpreter import Sandbox
         from src.sandbox.retry import execute_monte_carlo
+        import asyncio
 
-        sbx = await AsyncSandbox.create(template="code-interpreter-v1", timeout=120)
+        loop = asyncio.get_event_loop()
+        sbx = await loop.run_in_executor(
+            None, lambda: Sandbox.create(template="code-interpreter-v1", timeout=120)
+        )
         try:
             # Install dependencies
-            await sbx.commands.run('pip install mesa numpy', timeout=60)
+            await loop.run_in_executor(
+                None, lambda: sbx.commands.run('pip install mesa numpy', timeout=60)
+            )
 
             # Simple trial function that returns True 70% of the time
             code = '''
@@ -153,15 +167,19 @@ def run_trial(seed: int) -> bool:
             assert result.n_runs == 100
             assert len(result.results) == 100
         finally:
-            await sbx.kill()
+            await loop.run_in_executor(None, sbx.kill)
 
     @pytest.mark.asyncio
     async def test_execute_with_fallback(self):
         """Test that fallback is used when code fails."""
-        from e2b import AsyncSandbox
+        from e2b_code_interpreter import Sandbox
         from src.sandbox.retry import execute_with_retry
+        import asyncio
 
-        sbx = await AsyncSandbox.create(template="code-interpreter-v1", timeout=120)
+        loop = asyncio.get_event_loop()
+        sbx = await loop.run_in_executor(
+            None, lambda: Sandbox.create(template="code-interpreter-v1", timeout=120)
+        )
         try:
             # Completely broken code
             broken_code = '''
@@ -182,7 +200,7 @@ print("Fallback executed!")
             assert result.used_fallback
             assert "Fallback executed!" in result.output
         finally:
-            await sbx.kill()
+            await loop.run_in_executor(None, sbx.kill)
 
 
 if __name__ == "__main__":

@@ -216,9 +216,56 @@ def execute_monte_carlo_sync(
             try:
                 output_lines = cal_result.output.strip().split('\n')
                 cal_data = json_module.loads(output_lines[-1])
-                calibrated_threshold = cal_data["mean"]
                 logger.info(f"Calibration: min={cal_data['min']:.3f}, max={cal_data['max']:.3f}, "
                            f"mean={cal_data['mean']:.3f}, std={cal_data['std']:.3f}")
+
+                # Check for degenerate case (no variance)
+                if cal_data['std'] < 0.001:
+                    logger.warning(f"No variance in calibration (std={cal_data['std']:.3f}), fixing model...")
+                    from src.generator.fixer import fix_model_variance_sync
+
+                    # Fix the model
+                    current_code = fix_model_variance_sync(code, cal_data)
+                    logger.info(f"Variance fixer returned {len(current_code)} chars of code")
+
+                    # Re-run calibration with fixed code
+                    calibration_code = re.sub(
+                        r'if __name__ == "__main__":\s*\n\s*results = run_monte_carlo\([^)]+\)\s*\n\s*print\(json\.dumps\(results\)\)',
+                        f'''if __name__ == "__main__":
+    import numpy as np
+    outcomes = []
+    for seed in range({n_calibration}):
+        model = SimulationModel(seed=seed)
+        for _ in range(100):
+            model.step()
+        results = model.get_results()
+        outcomes.append(results["final_outcome"])
+    calibration = {{
+        "min": float(min(outcomes)),
+        "max": float(max(outcomes)),
+        "mean": float(np.mean(outcomes)),
+        "std": float(np.std(outcomes))
+    }}
+    print(json.dumps(calibration))''',
+                        current_code
+                    )
+
+                    cal_result2 = execute_with_retry_sync(sbx, calibration_code, max_retries=3, fallback_code=None, filename_prefix="calibration_fixed")
+
+                    if cal_result2.success:
+                        try:
+                            output_lines2 = cal_result2.output.strip().split('\n')
+                            cal_data2 = json_module.loads(output_lines2[-1])
+                            logger.info(f"Re-calibration: min={cal_data2['min']:.3f}, max={cal_data2['max']:.3f}, "
+                                       f"mean={cal_data2['mean']:.3f}, std={cal_data2['std']:.3f}")
+                            calibrated_threshold = cal_data2["mean"]
+                        except:
+                            calibrated_threshold = 0.5
+                    else:
+                        calibrated_threshold = 0.5
+                else:
+                    calibrated_threshold = cal_data["mean"]
+
                 logger.info(f"Using calibrated threshold: {calibrated_threshold:.3f}")
 
                 # Update threshold in code
@@ -247,6 +294,12 @@ def execute_monte_carlo_sync(
             result.ci_95 = data["ci_95"]
             result.n_runs = data["n_runs"]
             result.results = data["results"]
+
+            # Log final results
+            yes_count = sum(result.results)
+            no_count = result.n_runs - yes_count
+            logger.info(f"Monte Carlo complete: {result.probability:.1%} ± {result.ci_95:.1%} "
+                       f"({yes_count} yes / {no_count} no)")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
             result.success = False
             result.error = f"Failed to parse output: {result.output[:500]}... Error: {e}"

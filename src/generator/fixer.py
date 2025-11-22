@@ -146,3 +146,86 @@ Return the fixed code:"""
         fixed_code = fixed_code[:-3]
 
     return fixed_code.strip()
+
+
+VARIANCE_FIXER_PROMPT = """You are an expert at fixing agent-based models that produce degenerate outputs.
+
+The model's compute_outcome function produces constant values with no variance across different random seeds.
+This makes the Monte Carlo simulation useless.
+
+## Problem Analysis
+Calibration results show:
+- min={min}, max={max}, mean={mean}, std={std}
+
+This typically happens when:
+1. Multipliers push values above 1.0 before clamping
+2. Agent behaviors don't create enough variation
+3. The outcome formula is dominated by fixed model parameters
+
+## Your Task
+Fix the compute_outcome function to:
+1. Return values distributed roughly between 0.2-0.8 (not saturating at 0 or 1)
+2. Ensure random agent initialization creates meaningful variance
+3. Remove or reduce multipliers that cause saturation
+4. Make the outcome sensitive to agent state changes during simulation
+
+Rules:
+- Return ONLY the fixed Python code, no explanations
+- Do not wrap in markdown code blocks
+- Keep all agent classes and their logic
+- Only modify compute_outcome and possibly MODEL_PARAMS
+- Ensure outcomes vary meaningfully based on random seeds
+"""
+
+
+def fix_model_variance_sync(code: str, cal_data: dict, model: str = None) -> str:
+    """
+    Fix model that produces constant outcomes with no variance.
+
+    Args:
+        code: The model code
+        cal_data: Calibration results with min, max, mean, std
+        model: Claude model to use
+
+    Returns:
+        Fixed Python code with better variance
+    """
+    from anthropic import Anthropic
+
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    system_prompt = VARIANCE_FIXER_PROMPT.format(
+        min=cal_data['min'],
+        max=cal_data['max'],
+        mean=cal_data['mean'],
+        std=cal_data['std']
+    )
+
+    user_prompt = f"""Fix this model to produce meaningful variance in outcomes:
+
+```python
+{code}
+```
+
+Return the fixed code:"""
+
+    response = client.messages.create(
+        model=model or DEFAULT_MODEL,
+        max_tokens=4096,
+        system=system_prompt,
+        messages=[
+            {"role": "user", "content": user_prompt}
+        ]
+    )
+
+    fixed_code = response.content[0].text
+
+    # Clean up markdown
+    if fixed_code.startswith("```python"):
+        fixed_code = fixed_code[9:]
+    elif fixed_code.startswith("```"):
+        fixed_code = fixed_code[3:]
+    if fixed_code.endswith("```"):
+        fixed_code = fixed_code[:-3]
+
+    return fixed_code.strip()

@@ -19,7 +19,7 @@ class TestEconomicModel:
         """Test model creates with default parameters."""
         model = EconomicModel()
         assert model is not None
-        assert len(model.agents) == 100  # 30 + 50 + 20
+        assert len(model.schedule.agents) == 100  # 30 + 50 + 20
 
     def test_model_custom_parameters(self):
         """Test model with custom parameters."""
@@ -34,7 +34,7 @@ class TestEconomicModel:
         assert model.interest_rate == 7.0
         assert model.inflation == 4.5
         assert model.sentiment == -0.3
-        assert len(model.agents) == 35
+        assert len(model.schedule.agents) == 35
 
     def test_model_with_seed(self):
         """Test model with seed runs without error."""
@@ -55,9 +55,9 @@ class TestEconomicModel:
             num_firms=3,
         )
 
-        investors = [a for a in model.agents if isinstance(a, InvestorAgent)]
-        consumers = [a for a in model.agents if isinstance(a, ConsumerAgent)]
-        firms = [a for a in model.agents if isinstance(a, FirmAgent)]
+        investors = [a for a in model.schedule.agents if isinstance(a, InvestorAgent)]
+        consumers = [a for a in model.schedule.agents if isinstance(a, ConsumerAgent)]
+        firms = [a for a in model.schedule.agents if isinstance(a, FirmAgent)]
 
         assert len(investors) == 5
         assert len(consumers) == 10
@@ -186,7 +186,7 @@ class TestAgentBehavior:
     def test_investor_attributes(self):
         """Test investor has required attributes."""
         model = EconomicModel(num_investors=1, num_consumers=0, num_firms=0)
-        investor = list(model.agents)[0]
+        investor = list(model.schedule.agents)[0]
 
         assert hasattr(investor, "wealth")
         assert hasattr(investor, "invested")
@@ -195,7 +195,7 @@ class TestAgentBehavior:
     def test_consumer_attributes(self):
         """Test consumer has required attributes."""
         model = EconomicModel(num_investors=0, num_consumers=1, num_firms=0)
-        consumer = list(model.agents)[0]
+        consumer = list(model.schedule.agents)[0]
 
         assert hasattr(consumer, "income")
         assert hasattr(consumer, "savings")
@@ -204,7 +204,7 @@ class TestAgentBehavior:
     def test_firm_attributes(self):
         """Test firm has required attributes."""
         model = EconomicModel(num_investors=0, num_consumers=0, num_firms=1)
-        firm = list(model.agents)[0]
+        firm = list(model.schedule.agents)[0]
 
         assert hasattr(firm, "production_capacity")
         assert hasattr(firm, "inventory")

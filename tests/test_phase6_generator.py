@@ -10,18 +10,17 @@ class TestPrompts:
     """Test prompt generation."""
 
     def test_system_prompt_contains_mesa_spec(self):
-        """System prompt should contain Mesa 3.x technical spec."""
-        assert "Mesa 3.x" in SYSTEM_PROMPT
-        assert "super().__init__(model)" in SYSTEM_PROMPT
-        assert "shuffle_do" in SYSTEM_PROMPT
-        assert "RandomActivation" in SYSTEM_PROMPT  # in forbidden section
+        """System prompt should contain Mesa 2.x technical spec."""
+        assert "Mesa 2.1.5" in SYSTEM_PROMPT or "Mesa 2.x" in SYSTEM_PROMPT
+        assert "super().__init__(unique_id, model)" in SYSTEM_PROMPT
+        assert "RandomActivation" in SYSTEM_PROMPT
 
     def test_system_prompt_contains_output_format(self):
         """System prompt should specify required output format."""
-        assert '"probability"' in SYSTEM_PROMPT
-        assert '"n_runs"' in SYSTEM_PROMPT
-        assert '"results"' in SYSTEM_PROMPT
-        assert '"ci_95"' in SYSTEM_PROMPT
+        assert "AGENT_CONFIG" in SYSTEM_PROMPT
+        assert "MODEL_PARAMS" in SYSTEM_PROMPT
+        assert "THRESHOLD" in SYSTEM_PROMPT
+        assert "compute_outcome" in SYSTEM_PROMPT
 
     def test_create_generation_prompt(self):
         """Test user prompt creation."""
@@ -54,17 +53,17 @@ class TestGenerator:
             """
         )
 
-        # Check code structure
-        assert "import random" in code
+        # Check code structure - generated code includes full template
         assert "from mesa import" in code
         assert "class" in code and "Agent" in code
-        assert "class" in code and "Model" in code
-        assert "def run_monte_carlo" in code
-        assert "probability" in code
+        assert "def compute_outcome" in code
+        assert "AGENT_CONFIG" in code
+        assert "MODEL_PARAMS" in code
+        assert "THRESHOLD" in code
 
-        # Should NOT have deprecated Mesa 2.x patterns
-        assert "RandomActivation" not in code
-        assert "self.schedule.add" not in code
+        # Should use Mesa 2.x patterns (in template)
+        assert "RandomActivation" in code
+        assert "self.schedule.add" in code
 
     @pytest.mark.slow
     def test_generate_model_economic(self):
@@ -81,8 +80,9 @@ class TestGenerator:
             """
         )
 
+        # Generated code includes template with run_monte_carlo and SimulationModel
         assert "def run_monte_carlo" in code
-        assert "SimulationModel" in code or "Model" in code
+        assert "SimulationModel" in code
 
     @pytest.mark.slow
     def test_generated_code_is_syntactically_valid(self):
