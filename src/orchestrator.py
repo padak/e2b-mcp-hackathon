@@ -64,13 +64,6 @@ async def run_pipeline(
     loop = asyncio.get_event_loop()
 
     try:
-        # Install dependencies (Mesa 2.1.5 for correct syntax)
-        if verbose:
-            print("Installing dependencies...")
-        await loop.run_in_executor(
-            None, lambda: sbx.commands.run('pip install mesa==2.1.5 pandas numpy plotly', timeout=120)
-        )
-
         # Step 1: Research with Perplexity
         if verbose:
             print("Researching with Perplexity...")
