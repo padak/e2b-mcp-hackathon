@@ -160,21 +160,46 @@ Calibration results show:
 This typically happens when:
 1. Multipliers push values above 1.0 before clamping
 2. Agent behaviors don't create enough variation
-3. The outcome formula is dominated by fixed model parameters
+3. The outcome formula uses fixed MODEL_PARAMS instead of actual agent states
+4. Coefficients dominate over agent-derived values
 
-## Your Task
-Fix the compute_outcome function to:
-1. Return values distributed roughly between 0.2-0.8 (not saturating at 0 or 1)
-2. Ensure random agent initialization creates meaningful variance
-3. Remove or reduce multipliers that cause saturation
-4. Make the outcome sensitive to agent state changes during simulation
+## Your Task - CRITICAL
+
+The outcome MUST vary based on random seed. Each seed creates different agent initial values via np.random.uniform().
+Your compute_outcome function MUST use these agent values, not fixed constants.
+
+### DO THIS:
+```python
+def compute_outcome(model):
+    agents = [a for a in model.schedule.agents if isinstance(a, SomeAgent)]
+    # USE actual agent state values that were randomly initialized
+    avg_value = np.mean([a.some_attribute for a in agents])
+    # Combine multiple agent attributes for variance
+    outcome = avg_value * 0.5 + other_agent_value * 0.3 + np.random.uniform(-0.05, 0.05)
+    return np.clip(outcome, 0, 1)
+```
+
+### DO NOT DO THIS:
+```python
+def compute_outcome(model):
+    # BAD: Using fixed model params or constants
+    outcome = model.some_param * 0.8 + 0.1  # This is constant!
+    return outcome
+```
+
+## Specific Fixes Required:
+1. Replace any fixed constants with agent-derived values
+2. Use np.mean([a.attribute for a in agents]) to get varying values
+3. Add small random noise: np.random.uniform(-0.05, 0.05)
+4. Keep coefficients small (0.1-0.5) to avoid saturation
+5. The formula should produce values roughly in 0.2-0.8 range
 
 Rules:
 - Return ONLY the fixed Python code, no explanations
 - Do not wrap in markdown code blocks
 - Keep all agent classes and their logic
-- Only modify compute_outcome and possibly MODEL_PARAMS
-- Ensure outcomes vary meaningfully based on random seeds
+- Focus on fixing compute_outcome to use agent states
+- Add np.random.uniform() noise as a last resort if needed
 """
 
 

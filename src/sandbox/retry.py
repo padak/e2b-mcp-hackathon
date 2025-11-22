@@ -258,7 +258,13 @@ def execute_monte_carlo_sync(
                             cal_data2 = json_module.loads(output_lines2[-1])
                             logger.info(f"Re-calibration: min={cal_data2['min']:.3f}, max={cal_data2['max']:.3f}, "
                                        f"mean={cal_data2['mean']:.3f}, std={cal_data2['std']:.3f}")
-                            calibrated_threshold = cal_data2["mean"]
+
+                            # If still low variance, use threshold slightly below mean
+                            if cal_data2['std'] < 0.01:
+                                calibrated_threshold = cal_data2["mean"] - 0.01
+                                logger.warning(f"Still low variance after fix, using threshold={calibrated_threshold:.3f}")
+                            else:
+                                calibrated_threshold = cal_data2["mean"]
                         except:
                             calibrated_threshold = 0.5
                     else:
