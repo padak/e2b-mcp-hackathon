@@ -46,13 +46,14 @@ async def test_code_execution(check_api_keys):
 
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_mesa_installation(check_api_keys):
     """Test Mesa installation and import in sandbox."""
     sbx = await create_sandbox()
 
     try:
-        # Install Mesa
-        await sbx.commands.run('pip install mesa', timeout=120)
+        # Install Mesa (can take a while)
+        await sbx.commands.run('pip install mesa', timeout=300)
 
         # Test import
         result = await sbx.commands.run('''python3 -c "

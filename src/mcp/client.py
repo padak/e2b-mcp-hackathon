@@ -39,8 +39,19 @@ async def search(sandbox: AsyncSandbox, query: str) -> str:
         Search results as string
     """
     async with create_mcp_client(sandbox) as session:
+        # Find the perplexity_ask tool dynamically
+        tools = await session.list_tools()
+        tool_name = None
+        for tool in tools.tools:
+            if "perplexity" in tool.name.lower() and "ask" in tool.name.lower():
+                tool_name = tool.name
+                break
+
+        if not tool_name:
+            raise RuntimeError(f"Perplexity ask tool not found. Available: {[t.name for t in tools.tools]}")
+
         result = await session.call_tool(
-            "perplexity-ask-perplexity_ask",
+            tool_name,
             {"messages": [{"role": "user", "content": query}]}
         )
 
