@@ -79,9 +79,9 @@ def create_sandbox_without_mcp_sync(verbose: bool = True) -> Sandbox:
         Sandbox for code execution
     """
     if verbose:
-        logger.info("Creating E2B sandbox without MCP...")
+        logger.info("Creating E2B sandbox with mesa-mcp-gateway template...")
 
-    sbx = Sandbox.create(template="code-interpreter-v1", timeout=300)
+    sbx = Sandbox.create(template="mesa-mcp-gateway", timeout=300)
 
     if verbose:
         logger.info(f"Sandbox created: {sbx.sandbox_id}")
@@ -234,7 +234,7 @@ def run_monte_carlo_sync(
     auto_calibrate: bool = True,
     n_calibration: int = 50,
     verbose: bool = True,
-    install_deps: bool = True
+    install_deps: bool = False  # mesa-mcp-gateway template has deps pre-installed
 ) -> dict:
     """Run Monte Carlo simulation with optional auto-calibration.
 
@@ -366,7 +366,7 @@ async def run_monte_carlo(
     auto_calibrate: bool = True,
     n_calibration: int = 50,
     verbose: bool = True,
-    install_deps: bool = True
+    install_deps: bool = False  # mesa-mcp-gateway template has deps pre-installed
 ) -> dict:
     """Async wrapper for run_monte_carlo_sync."""
     loop = asyncio.get_event_loop()
