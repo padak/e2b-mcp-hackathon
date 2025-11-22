@@ -1,0 +1,12 @@
+anthropic
+e2b
+mcp
+httpx
+pydantic
+plotly
+rich
+python-dotenv
+mesa
+numpy
+pandas
+py-clob-client

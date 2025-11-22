@@ -22,7 +22,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 1: Project Setup
 
-- [ ] **1.1** Create project structure
+- [x] **1.1** Create project structure
   ```
   src/
   ├── mcp/           # MCP client wrapper
@@ -32,7 +32,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   └── cli.py         # Entry point
   ```
 
-- [ ] **1.2** Create `requirements.txt`
+- [x] **1.2** Create `requirements.txt`
   ```
   anthropic
   e2b
@@ -48,17 +48,17 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   py-clob-client
   ```
 
-- [ ] **1.3** Install dependencies in .venv
+- [x] **1.3** Install dependencies in .venv
   ```bash
   pip install -r requirements.txt
   ```
 
-- [ ] **1.4** Verify `.env` has all API keys
+- [x] **1.4** Verify `.env` has all API keys
   ```bash
   python -c "from dotenv import load_dotenv; import os; load_dotenv(); keys = ['ANTHROPIC_API_KEY', 'E2B_API_KEY', 'PERPLEXITY_API_KEY', 'POLYMARKET_API_KEY', 'POLYMARKET_SECRET', 'POLYMARKET_PASSPHRASE']; [print(f'{k}: {\"OK\" if os.getenv(k) else \"MISSING\"}') for k in keys]"
   ```
 
-- [ ] **1.5** Create `__init__.py` files for package imports
+- [x] **1.5** Create `__init__.py` files for package imports
   ```bash
   touch src/__init__.py
   touch src/mcp/__init__.py
@@ -72,7 +72,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 2: E2B Sandbox with MCP Gateway
 
-- [ ] **2.1** Create `src/sandbox/runner.py`
+- [x] **2.1** Create `src/sandbox/runner.py`
   - Create sandbox with Perplexity MCP enabled
   - Function: `create_sandbox() -> AsyncSandbox`
   ```python
@@ -87,7 +87,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   )
   ```
 
-- [ ] **2.2** Test E2B + MCP connection
+- [x] **2.2** Test E2B + MCP connection
   ```python
   # Get MCP URL and token
   mcp_url = sbx.get_mcp_url()
@@ -95,19 +95,19 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   print(f"MCP Gateway: {mcp_url}")
   ```
 
-- [ ] **2.3** Test code execution in sandbox
+- [x] **2.3** Test code execution in sandbox
   ```python
-  result = await sbx.run_python('print("Hello from E2B")')
+  result = await sbx.commands.run('python3 -c "print(\'Hello from E2B\')"')
   # Should print "Hello from E2B"
   ```
 
-- [ ] **2.4** Test Mesa in sandbox
+- [x] **2.4** Test Mesa in sandbox
   ```python
-  await sbx.run_python('!pip install mesa plotly pandas')
-  result = await sbx.run_python('''
+  await sbx.commands.run('pip install mesa plotly pandas numpy')
+  result = await sbx.commands.run('''python3 -c "
   from mesa import Agent, Model
-  print("Mesa works!")
-  ''')
+  print('Mesa works!')
+  "''')
   ```
 
 ---
