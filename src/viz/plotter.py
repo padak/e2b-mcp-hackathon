@@ -390,8 +390,8 @@ def create_dashboard(
     summary_line = (
         f"<span style='font-size:11px'>"
         f"Simulation: {prob:.0%} ± {ci:.0%}  |  "
-        f"Polymarket: {market_odds:.0%}  |  "
-        f"Diff: {diff_sign}{diff*100:.1f}pp</span>"
+        f"Market odds (Polymarket): {market_odds:.0%}  |  "
+        f"Difference: {diff_sign}{diff*100:.1f}pp</span>"
     )
 
     # Add model info if provided

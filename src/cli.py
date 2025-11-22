@@ -83,7 +83,7 @@ async def run_simulation(market: dict) -> None:
         from src.viz.plotter import create_dashboard
         import re
 
-        def extract_model_info(code: str) -> dict:
+        def extract_model_info(code: str, question: str) -> dict:
             """Extract agent and parameter info from generated code."""
             info = {"agents": [], "parameters": {}}
 
@@ -108,6 +108,16 @@ async def run_simulation(market: dict) -> None:
                         key = match.group(1)
                         value = match.group(2).strip()
                         info["parameters"][key] = value
+
+            # Generate name and description
+            if info["agents"]:
+                total_agents = sum(a["count"] for a in info["agents"])
+                agent_types = len(info["agents"])
+                info["name"] = "Agent-Based Monte Carlo Simulation"
+                info["description"] = (
+                    f"Simulates {total_agents} agents across {agent_types} types to model "
+                    f"the probability of the predicted outcome based on agent interactions and behaviors."
+                )
 
             return info
 
@@ -169,7 +179,7 @@ async def run_simulation(market: dict) -> None:
                 "n_runs": result.n_runs,
                 "results": result.results
             }
-            model_info = extract_model_info(generated_code)
+            model_info = extract_model_info(generated_code, question)
             html = create_dashboard(simulation_data, yes_odds, question, model_info)
 
             # Save results locally
