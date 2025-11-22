@@ -1,44 +1,52 @@
-
 # News Scenario Simulator
 
-AI agent pro novináře - analyzuje aktuální témata a simuluje jejich budoucí vývoj.
+AI agent that generates simulations from prediction markets and compares results with crowd wisdom.
 
-## Idea
+## Concept
 
-1. **Sběr témat** - Agent získá aktuální témata z novin přes MCP (Brave Search / Exa)
-2. **Výběr tématu** - Vybere téma vhodné pro simulaci budoucího vývoje
-3. **Research parametrů** - Použije Perplexity a ArXiv pro získání dat a nastavení parametrů
-4. **Návrh simulace** - Předloží uživateli návrh simulačního scénáře
-5. **Spuštění simulace** - Po schválení spustí Mesa model v E2B sandboxu
-6. **Vizualizace** - Výsledky vizualizuje pro použití na webu (Plotly/D3)
+**Input**: Polymarket prediction market (e.g., "Will Fed cut rates in December?")
+**Output**: Monte Carlo simulation vs market odds visualization
 
-## Technologie
+## Flow
 
-- **Simulační framework**: Mesa (Python agent-based modeling)
+```
+Polymarket → Pick market with real $ odds
+                    ↓
+         Perplexity → Research context/data
+                    ↓
+         Claude → Generate Mesa simulation code
+                    ↓
+         E2B → Execute simulation (retry if fails)
+                    ↓
+         Plotly → Compare: Simulation dist vs Market odds
+```
+
+## Key Features
+
+1. **Dynamic Code Generation** - LLM writes complete Mesa simulations
+2. **Self-Healing** - Retry loop with error feedback
+3. **Market Comparison** - AI prediction vs crowd wisdom
+4. **Safe Execution** - E2B sandbox isolation
+
+## Tech Stack
+
+- **Data**: Polymarket API, Perplexity MCP
+- **AI**: Claude (Anthropic)
+- **Simulation**: Mesa (agent-based modeling)
 - **Execution**: E2B sandbox
-- **MCP servery**: Brave Search, Perplexity, ArXiv
-- **Vizualizace**: Plotly pro interaktivní grafy
+- **Viz**: Plotly
 
-## Architektura
+## Example Output
 
 ```
-News MCP → Topic Selection → Perplexity/ArXiv Research
-                                      ↓
-                            Parameter Extraction
-                                      ↓
-                         Mesa Model Generation
-                                      ↓
-                    User Approval → E2B Execution
-                                      ↓
-                         Visualization (Plotly)
+Topic: "Fed rate cut December 2024"
+
+Polymarket odds: 72% Yes
+
+Simulation result:
+  Mean: 65%
+  Std: 8%
+  Range: [48%, 82%]
+
+→ Market is slightly more bullish than simulation
 ```
-
----
-
-## Hackathon Info
-
-https://luma.com/0vm36r4q?tk=fMGAuu
-
-- Submit until 22. 11. 9:00 PDT
-- Requirements: E2B sandbox + MCP from Docker Hub
-- Resources: https://e2bdev.notion.site/MCP-Agents-Hackathon-Resources-2a4b8c29687380e9bd64dddb5a939e5c
