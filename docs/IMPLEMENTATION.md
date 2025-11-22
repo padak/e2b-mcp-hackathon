@@ -231,17 +231,17 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 6: LLM Model Generator
 
-- [ ] **6.1** Create `src/generator/prompts.py`
+- [x] **6.1** Create `src/generator/prompts.py`
   - System prompt with Mesa examples
   - Output format specification
   - Constraints (max agents, required outputs)
 
-- [ ] **6.2** Create `src/generator/generator.py`
+- [x] **6.2** Create `src/generator/generator.py`
   - Function: `generate_model(topic: str, research: dict) -> str`
   - Uses Claude to generate complete Mesa code
   - Returns Python code as string
 
-- [ ] **6.3** Test model generation
+- [x] **6.3** Test model generation
   ```python
   code = generate_model(
       topic="Fed rate hike impact",
