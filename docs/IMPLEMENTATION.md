@@ -204,13 +204,13 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 5: Reference Model (Fallback)
 
-- [ ] **5.1** Create `src/models/economic_shock.py`
+- [x] **5.1** Create `src/models/economic_shock.py`
   - Complete Mesa model for economic simulation
   - Agents: Investors, Consumers, Firms
   - Parameters: interest_rate, inflation, sentiment
   - Output: time series + final distribution
 
-- [ ] **5.2** Test reference model locally
+- [x] **5.2** Test reference model locally
   ```python
   from models.economic_shock import EconomicModel
   model = EconomicModel(interest_rate=5.5, num_agents=100)
@@ -219,7 +219,9 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   print(model.get_results())
   ```
 
-- [ ] **5.3** Test reference model in E2B
+- [x] **5.3** Test reference model in E2B
+  - Uses `code-interpreter-v1` template (Python 3.12)
+  - Installs from requirements.txt
   ```python
   code = open("src/models/economic_shock.py").read()
   result = await sbx.run_python(code + "\n\n# Run simulation\n...")

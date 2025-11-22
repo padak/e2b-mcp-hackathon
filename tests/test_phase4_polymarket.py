@@ -7,16 +7,20 @@ Tests for the Polymarket API client using Gamma API.
 import pytest
 import sys
 import os
+import importlib.util
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from mcp.polymarket import (
-    get_markets,
-    format_for_llm,
-    select_high_volume_markets,
-    format_markets_for_display,
+# Load polymarket module directly to avoid conflict with mcp package
+spec = importlib.util.spec_from_file_location(
+    "polymarket",
+    os.path.join(os.path.dirname(__file__), '..', 'src', 'mcp', 'polymarket.py')
 )
+polymarket = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(polymarket)
+
+get_markets = polymarket.get_markets
+format_for_llm = polymarket.format_for_llm
+select_high_volume_markets = polymarket.select_high_volume_markets
+format_markets_for_display = polymarket.format_markets_for_display
 
 
 class TestPolymarketClient:

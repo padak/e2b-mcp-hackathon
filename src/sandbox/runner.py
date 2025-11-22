@@ -11,6 +11,7 @@ load_dotenv()
 async def create_sandbox() -> AsyncSandbox:
     """Create E2B sandbox with Perplexity MCP enabled."""
     sbx = await AsyncSandbox.create(
+        template="code-interpreter-v1",
         timeout=300,  # 5 minutes
         mcp={
             "perplexityAsk": {
@@ -80,10 +81,55 @@ async def test_perplexity_mcp():
         await sbx.kill()
 
 
+async def test_economic_model():
+    """Test economic shock model in E2B sandbox."""
+    # Use code-interpreter-v1 for Python 3.12 (no MCP needed for model)
+    sbx = await AsyncSandbox.create(
+        template="code-interpreter-v1",
+        timeout=300,
+    )
+
+    try:
+        # Install dependencies from requirements.txt
+        print("Installing dependencies...")
+        req_path = os.path.join(os.path.dirname(__file__), '..', '..', 'requirements.txt')
+        with open(req_path, 'r') as f:
+            req_content = f.read()
+        await sbx.files.write('/tmp/requirements.txt', req_content)
+        await sbx.commands.run('pip install -r /tmp/requirements.txt', timeout=120)
+
+        # Check installed version
+        ver = await sbx.commands.run('pip show mesa | grep Version')
+        print(f"Mesa version: {ver.stdout}")
+
+        # Read and upload the model code
+        model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'economic_shock.py')
+        with open(model_path, 'r') as f:
+            model_code = f.read()
+
+        # Write model to sandbox
+        await sbx.files.write('/tmp/economic_shock.py', model_code)
+
+        # Run the model test
+        print("Running economic shock model in E2B...")
+        result = await sbx.commands.run('python3 /tmp/economic_shock.py', timeout=60)
+
+        print(f"Output:\n{result.stdout}")
+        if result.stderr:
+            print(f"Errors:\n{result.stderr}")
+
+        return True
+
+    finally:
+        await sbx.kill()
+
+
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1] == "mcp":
         asyncio.run(test_perplexity_mcp())
+    elif len(sys.argv) > 1 and sys.argv[1] == "model":
+        asyncio.run(test_economic_model())
     else:
         asyncio.run(test_sandbox())
