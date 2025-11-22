@@ -9,7 +9,7 @@ from pathlib import Path
 
 # Template configuration
 TEMPLATE_NAME = "mesa-mcp-gateway"
-BASE_TEMPLATE = "mcp-gateway"
+BASE_TEMPLATE = "base"
 
 # Requirements from requirements-e2b.txt
 REQUIREMENTS = """mesa==2.1.5
@@ -25,16 +25,7 @@ def create_template():
     template_dir = Path(tempfile.mkdtemp(prefix="e2b_template_"))
 
     try:
-        # Create e2b.toml
-        e2b_toml = f"""# E2B Template Configuration
-template_id = "{TEMPLATE_NAME}"
-
-[template]
-dockerfile = "Dockerfile"
-"""
-        (template_dir / "e2b.toml").write_text(e2b_toml)
-
-        # Create Dockerfile
+        # Create e2b.Dockerfile
         dockerfile = f"""FROM e2bdev/{BASE_TEMPLATE}
 
 # Install Python dependencies
@@ -44,7 +35,7 @@ RUN pip install --no-cache-dir \\
     pandas \\
     plotly
 """
-        (template_dir / "Dockerfile").write_text(dockerfile)
+        (template_dir / "e2b.Dockerfile").write_text(dockerfile)
 
         print(f"Template files created in: {template_dir}")
         print(f"\nBuilding template '{TEMPLATE_NAME}' based on '{BASE_TEMPLATE}'...")

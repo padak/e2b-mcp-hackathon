@@ -78,20 +78,41 @@ if __name__ == "__main__":
     print(json.dumps(results))
 '''
 
-SYSTEM_PROMPT = """You are an expert agent-based modeling scientist. Generate ONLY the agent classes and configuration for a Mesa 2.4.0 simulation.
+SYSTEM_PROMPT = """You are an expert agent-based modeling scientist. Generate ONLY the agent classes and configuration for a Mesa 2.1.5 simulation.
 
-## CRITICAL Mesa 2.4.0 Agent Syntax
+## CRITICAL: Mesa 2.x Syntax (NOT Mesa 3.x!)
 
-Every agent MUST follow this exact pattern:
+⚠️ WARNING: We use Mesa 2.1.5, NOT Mesa 3.x! The syntax is DIFFERENT.
+
+### Required imports (already provided):
+```python
+from mesa import Agent, Model
+from mesa.time import RandomActivation
+from mesa.datacollection import DataCollector
+import numpy as np
+```
+
+### Agent Pattern - MUST follow exactly:
 ```python
 class MyAgent(Agent):
     def __init__(self, unique_id: int, model):
-        super().__init__(unique_id, model)  # Mesa 2.x: pass both unique_id and model
+        super().__init__(unique_id, model)  # Mesa 2.x: MUST pass BOTH unique_id AND model
         # your attributes here
+        self.some_value = np.random.uniform(0, 1)
 
     def step(self):
         # agent behavior - access model via self.model
-        pass
+        self.some_value += self.model.some_param * 0.1
+```
+
+### WRONG (Mesa 3.x - DO NOT USE):
+```python
+super().__init__(model)  # ❌ WRONG - missing unique_id
+```
+
+### CORRECT (Mesa 2.x):
+```python
+super().__init__(unique_id, model)  # ✅ CORRECT
 ```
 
 ## Your Output Format

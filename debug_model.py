@@ -5,112 +5,169 @@ from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
 # ============== LLM GENERATED CODE START ==============
-from mesa import Agent, Model
-from mesa.time import RandomActivation
-from mesa.datacollection import DataCollector
-import numpy as np
+from mesa import Agent
+import random
 
-class MilitaryAgent(Agent):
+class MaduroRegime(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.loyalty_to_maduro = np.random.uniform(0.7, 0.95)
-        self.economic_pressure_sensitivity = np.random.uniform(0.3, 0.7)
+        self.control_strength = 0.85
+        self.military_loyalty = 0.80
+        self.repression_capacity = 0.75
         
     def step(self):
-        economic_impact = self.model.economic_crisis * self.economic_pressure_sensitivity
-        international_impact = self.model.international_pressure * 0.3
+        # Regime adapts to pressure by increasing repression
+        external_pressure = self.model.us_pressure + self.model.intl_sanctions
+        self.repression_capacity = min(0.95, self.repression_capacity + external_pressure * 0.02)
         
-        self.loyalty_to_maduro -= (economic_impact * 0.1 + international_impact * 0.05)
-        self.loyalty_to_maduro = max(0.0, min(1.0, self.loyalty_to_maduro))
+        # Military loyalty can erode under sustained pressure and economic collapse
+        if self.model.economic_collapse > 0.7 and random.random() < 0.1:
+            self.military_loyalty *= 0.95
         
-        if self.loyalty_to_maduro < 0.4 and np.random.random() < 0.1:
-            self.loyalty_to_maduro = 0.2
+        # Control strength is composite of military and repression
+        self.control_strength = (self.military_loyalty * 0.6 + self.repression_capacity * 0.4)
+        
+        # Small chance of elite defection if control weakens significantly
+        if self.control_strength < 0.5 and random.random() < 0.15:
+            self.control_strength *= 0.8
 
-class OppositionAgent(Agent):
+class Opposition(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.mobilization_capacity = np.random.uniform(0.5, 0.8)
-        self.international_support = np.random.uniform(0.6, 0.9)
+        self.mobilization = 0.35
+        self.international_support = 0.40
+        self.unity = 0.45
         
     def step(self):
-        self.mobilization_capacity += self.model.international_pressure * 0.05
-        self.mobilization_capacity = min(1.0, self.mobilization_capacity)
+        # Mobilization increases with economic collapse and international support
+        self.mobilization = min(0.9, self.mobilization + 
+                               self.model.economic_collapse * 0.03 + 
+                               self.international_support * 0.02)
         
-        if self.model.popular_protest_level > 0.7:
-            self.mobilization_capacity += 0.03
-            self.mobilization_capacity = min(1.0, self.mobilization_capacity)
+        # Repression dampens mobilization
+        regime_agents = [a for a in self.model.agents if isinstance(a, MaduroRegime)]
+        if regime_agents:
+            avg_repression = sum(r.repression_capacity for r in regime_agents) / len(regime_agents)
+            self.mobilization *= (1 - avg_repression * 0.15)
+        
+        # International support increases with US pressure
+        self.international_support = min(0.85, self.international_support + 
+                                        self.model.us_pressure * 0.05)
+        
+        # Unity fluctuates but trends up with external support
+        if random.random() < 0.3:
+            self.unity = min(0.8, self.unity + random.uniform(0, 0.1))
+        else:
+            self.unity *= random.uniform(0.95, 1.0)
 
-class RegimeEliteAgent(Agent):
+class USIntervention(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.regime_loyalty = np.random.uniform(0.6, 0.9)
-        self.corruption_benefit = np.random.uniform(0.5, 0.9)
+        self.covert_ops_intensity = 0.30
+        self.military_threat_level = 0.15
+        self.diplomatic_pressure = 0.50
         
     def step(self):
-        avg_military_loyalty = np.mean([a.loyalty_to_maduro for a in self.model.schedule.agents if isinstance(a, MilitaryAgent)])
+        # US escalates based on regime strength and policy
+        regime_agents = [a for a in self.model.agents if isinstance(a, MaduroRegime)]
+        if regime_agents:
+            avg_control = sum(r.control_strength for r in regime_agents) / len(regime_agents)
+            
+            # Higher regime control may trigger more intervention
+            if avg_control > 0.75:
+                self.covert_ops_intensity = min(0.7, self.covert_ops_intensity + 0.05)
+                if random.random() < self.model.intervention_probability:
+                    self.military_threat_level = min(0.5, self.military_threat_level + 0.08)
         
-        if avg_military_loyalty < 0.5:
-            self.regime_loyalty -= 0.15
-        
-        economic_loss = self.model.economic_crisis * 0.4
-        self.regime_loyalty -= economic_loss * 0.08
-        self.regime_loyalty = max(0.0, min(1.0, self.regime_loyalty))
+        # Update model pressure
+        self.model.us_pressure = (self.covert_ops_intensity * 0.4 + 
+                                 self.military_threat_level * 0.4 + 
+                                 self.diplomatic_pressure * 0.2)
 
-class InternationalActorAgent(Agent):
+class Military(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.intervention_willingness = np.random.uniform(0.2, 0.5)
-        self.sanction_strength = np.random.uniform(0.4, 0.7)
+        self.loyalty_to_maduro = 0.75
+        self.economic_satisfaction = 0.50
+        self.coup_risk = 0.10
         
     def step(self):
-        avg_opposition_strength = np.mean([a.mobilization_capacity for a in self.model.schedule.agents if isinstance(a, OppositionAgent)])
+        # Economic collapse erodes military satisfaction
+        self.economic_satisfaction = max(0.1, self.economic_satisfaction - 
+                                        self.model.economic_collapse * 0.04)
         
-        if avg_opposition_strength > 0.7:
-            self.intervention_willingness += 0.02
-            self.sanction_strength += 0.03
+        # US pressure and low satisfaction increase coup risk
+        if self.economic_satisfaction < 0.3 and self.model.us_pressure > 0.4:
+            self.coup_risk = min(0.6, self.coup_risk + 0.08)
         
-        self.intervention_willingness = min(0.6, self.intervention_willingness)
-        self.sanction_strength = min(1.0, self.sanction_strength)
+        # Loyalty erodes with low satisfaction and high coup risk
+        if self.economic_satisfaction < 0.4:
+            self.loyalty_to_maduro *= 0.98
+        
+        # Catastrophic loyalty collapse triggers potential coup
+        if self.loyalty_to_maduro < 0.4 and random.random() < self.coup_risk:
+            self.loyalty_to_maduro *= 0.5
+            self.coup_risk = min(0.9, self.coup_risk * 1.5)
 
 def compute_outcome(model):
-    military_agents = [a for a in model.schedule.agents if isinstance(a, MilitaryAgent)]
-    opposition_agents = [a for a in model.schedule.agents if isinstance(a, OppositionAgent)]
-    regime_agents = [a for a in model.schedule.agents if isinstance(a, RegimeEliteAgent)]
-    international_agents = [a for a in model.schedule.agents if isinstance(a, InternationalActorAgent)]
+    regime_agents = [a for a in model.agents if isinstance(a, MaduroRegime)]
+    opposition_agents = [a for a in model.agents if isinstance(a, Opposition)]
+    us_agents = [a for a in model.agents if isinstance(a, USIntervention)]
+    military_agents = [a for a in model.agents if isinstance(a, Military)]
     
-    avg_military_loyalty = np.mean([a.loyalty_to_maduro for a in military_agents]) if military_agents else 0.8
-    avg_opposition_strength = np.mean([a.mobilization_capacity for a in opposition_agents]) if opposition_agents else 0.5
-    avg_regime_loyalty = np.mean([a.regime_loyalty for a in regime_agents]) if regime_agents else 0.7
-    avg_international_pressure = np.mean([a.sanction_strength for a in international_agents]) if international_agents else 0.5
+    if not regime_agents:
+        return 0.5
     
-    military_defection_prob = 1.0 - avg_military_loyalty
-    regime_collapse_prob = 1.0 - avg_regime_loyalty
-    opposition_success_prob = avg_opposition_strength
-    international_impact = avg_international_pressure * 0.5
+    # Average regime control strength (inverse for ouster probability)
+    avg_regime_control = sum(r.control_strength for r in regime_agents) / len(regime_agents)
     
-    maduro_ouster_probability = (
-        military_defection_prob * 0.45 +
-        regime_collapse_prob * 0.25 +
-        opposition_success_prob * 0.20 +
-        international_impact * 0.10
+    # Opposition strength
+    avg_opposition_strength = 0
+    if opposition_agents:
+        avg_opposition_strength = sum((o.mobilization * 0.4 + o.unity * 0.3 + 
+                                       o.international_support * 0.3) 
+                                      for o in opposition_agents) / len(opposition_agents)
+    
+    # US intervention impact
+    avg_us_impact = 0
+    if us_agents:
+        avg_us_impact = sum((u.covert_ops_intensity * 0.3 + 
+                            u.military_threat_level * 0.5 + 
+                            u.diplomatic_pressure * 0.2) 
+                           for u in us_agents) / len(us_agents)
+    
+    # Military defection risk
+    avg_military_defection = 0
+    if military_agents:
+        avg_military_defection = sum((1 - m.loyalty_to_maduro) * 0.6 + m.coup_risk * 0.4 
+                                     for m in military_agents) / len(military_agents)
+    
+    # Combined probability of Maduro being ousted
+    ouster_probability = (
+        (1 - avg_regime_control) * 0.35 +
+        avg_opposition_strength * 0.20 +
+        avg_us_impact * 0.25 +
+        avg_military_defection * 0.20
     )
     
-    return maduro_ouster_probability
+    # Cap probability realistically given current odds
+    return min(0.40, max(0.05, ouster_probability))
 
 AGENT_CONFIG = {
-    MilitaryAgent: 15,
-    OppositionAgent: 12,
-    RegimeEliteAgent: 10,
-    InternationalActorAgent: 8,
+    MaduroRegime: 1,
+    Opposition: 8,
+    USIntervention: 2,
+    Military: 5,
 }
 
 MODEL_PARAMS = {
-    "economic_crisis": 0.75,
-    "international_pressure": 0.65,
-    "popular_protest_level": 0.60,
+    "us_pressure": 0.35,
+    "intl_sanctions": 0.60,
+    "economic_collapse": 0.75,
+    "intervention_probability": 0.12,
 }
 
-THRESHOLD = 0.92
+THRESHOLD = 0.5
 # ============== LLM GENERATED CODE END ==============
 
 class SimulationModel(Model):
