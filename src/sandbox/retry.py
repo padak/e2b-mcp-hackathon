@@ -235,7 +235,22 @@ def execute_monte_carlo_sync(
         if cal_result.success:
             try:
                 output_lines = cal_result.output.strip().split('\n')
-                cal_data = json_module.loads(output_lines[-1])
+                # Try to find JSON in output (might not be last line)
+                cal_data = None
+                for line in reversed(output_lines):
+                    line = line.strip()
+                    if line.startswith('{') and line.endswith('}'):
+                        try:
+                            cal_data = json_module.loads(line)
+                            if 'min' in cal_data and 'mean' in cal_data:
+                                break
+                        except:
+                            continue
+
+                if not cal_data or 'min' not in cal_data:
+                    logger.warning(f"Calibration output missing expected keys. Output: {cal_result.output[-200:]}")
+                    raise ValueError("Invalid calibration output format")
+
                 logger.info(f"Calibration: min={cal_data['min']:.3f}, max={cal_data['max']:.3f}, "
                            f"mean={cal_data['mean']:.3f}, std={cal_data['std']:.3f}")
 
