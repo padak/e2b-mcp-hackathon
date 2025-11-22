@@ -254,12 +254,12 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 7: Retry Loop & Monte Carlo
 
-- [ ] **7.1** Create `src/sandbox/retry.py`
+- [x] **7.1** Create `src/sandbox/retry.py`
   - Function: `execute_with_retry(sbx, code: str, max_retries: int = 5) -> Result`
   - On error: send error + code to LLM for fix
   - Return success result or fallback to reference model
 
-- [ ] **7.2** Monte Carlo wrapper
+- [x] **7.2** Monte Carlo wrapper
   - LLM generates code with `run_trial(seed) -> bool` function
   - Wrapper runs 200 trials with different seeds
   - Aggregates binary results into probability
@@ -275,11 +275,11 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
       }
   ```
 
-- [ ] **7.3** Create `src/generator/fixer.py`
+- [x] **7.3** Create `src/generator/fixer.py`
   - Function: `fix_code(code: str, error: str) -> str`
   - LLM analyzes error and fixes code
 
-- [ ] **7.4** Test retry loop
+- [x] **7.4** Test retry loop
   ```python
   # Intentionally broken code
   broken = "import mesa\nprint(undefined_var)"
