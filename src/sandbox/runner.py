@@ -102,6 +102,280 @@ async def create_sandbox_without_mcp(verbose: bool = True) -> Sandbox:
     return await loop.run_in_executor(None, create_sandbox_without_mcp_sync, verbose)
 
 
+def install_dependencies_sync(sbx: Sandbox, verbose: bool = True):
+    """Install Mesa and other dependencies in sandbox.
+
+    Args:
+        sbx: E2B sandbox instance
+        verbose: Enable logging
+    """
+    if verbose:
+        logger.info("Installing dependencies (mesa, numpy, pandas, plotly)...")
+
+    result = sbx.commands.run(
+        "pip install -q mesa==2.1.5 numpy pandas plotly",
+        timeout=120
+    )
+
+    if result.exit_code != 0:
+        logger.error(f"Failed to install dependencies: {result.stderr}")
+        raise RuntimeError(f"Dependency installation failed: {result.stderr}")
+
+    if verbose:
+        logger.info("Dependencies installed successfully")
+
+
+def calibrate_threshold_sync(
+    sbx: Sandbox,
+    model_code: str,
+    n_calibration: int = 50,
+    verbose: bool = True
+) -> dict:
+    """Run calibration to find optimal threshold.
+
+    Args:
+        sbx: E2B sandbox instance
+        model_code: Python code with SimulationModel class
+        n_calibration: Number of calibration runs
+        verbose: Enable logging
+
+    Returns:
+        dict with min, max, mean, std, suggested_threshold
+    """
+    import json
+    import numpy as np
+
+    if verbose:
+        logger.info(f"Running calibration with {n_calibration} runs...")
+
+    # Code to run calibration in sandbox
+    calibration_code = f'''
+import json
+import numpy as np
+
+{model_code}
+
+# Run calibration
+outcomes = []
+for seed in range({n_calibration}):
+    model = SimulationModel(seed=seed)
+    for _ in range(100):
+        model.step()
+    results = model.get_results()
+    outcomes.append(results["final_outcome"])
+
+calibration = {{
+    "min": float(min(outcomes)),
+    "max": float(max(outcomes)),
+    "mean": float(np.mean(outcomes)),
+    "std": float(np.std(outcomes)),
+    "suggested_threshold": float(np.mean(outcomes))
+}}
+print(json.dumps(calibration))
+'''
+
+    # Execute in sandbox
+    result = sbx.run_code(calibration_code)
+
+    if result.error:
+        logger.error(f"Calibration failed: {result.error}")
+        # Return default calibration
+        return {
+            "min": 0.0,
+            "max": 1.0,
+            "mean": 0.5,
+            "std": 0.25,
+            "suggested_threshold": 0.5,
+            "error": str(result.error)
+        }
+
+    # Get output from logs.stdout
+    output = ""
+    if result.logs and result.logs.stdout:
+        output = "".join(result.logs.stdout).strip()
+    elif result.text:
+        output = result.text.strip()
+
+    if not output:
+        logger.error("Calibration produced no output")
+        return {
+            "min": 0.0,
+            "max": 1.0,
+            "mean": 0.5,
+            "std": 0.25,
+            "suggested_threshold": 0.5,
+            "error": "No output from calibration"
+        }
+
+    try:
+        calibration = json.loads(output)
+        if verbose:
+            logger.info(f"Calibration results: min={calibration['min']:.3f}, "
+                       f"max={calibration['max']:.3f}, mean={calibration['mean']:.3f}, "
+                       f"std={calibration['std']:.3f}")
+        return calibration
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse calibration result: {e}")
+        return {
+            "min": 0.0,
+            "max": 1.0,
+            "mean": 0.5,
+            "std": 0.25,
+            "suggested_threshold": 0.5,
+            "error": f"Parse error: {e}"
+        }
+
+
+def run_monte_carlo_sync(
+    sbx: Sandbox,
+    model_code: str,
+    n_runs: int = 200,
+    threshold: float = None,
+    auto_calibrate: bool = True,
+    n_calibration: int = 50,
+    verbose: bool = True,
+    install_deps: bool = True
+) -> dict:
+    """Run Monte Carlo simulation with optional auto-calibration.
+
+    Args:
+        sbx: E2B sandbox instance
+        model_code: Python code with SimulationModel class
+        n_runs: Number of Monte Carlo runs
+        threshold: User-specified threshold (None = auto-calibrate)
+        auto_calibrate: Whether to run calibration first
+        n_calibration: Number of calibration runs
+        verbose: Enable logging
+        install_deps: Whether to install dependencies first
+
+    Returns:
+        dict with probability, ci_95, results, calibration info
+    """
+    import json
+
+    # Install dependencies if needed
+    if install_deps:
+        install_dependencies_sync(sbx, verbose)
+
+    calibration = None
+
+    # Auto-calibrate if no threshold specified
+    if threshold is None and auto_calibrate:
+        calibration = calibrate_threshold_sync(sbx, model_code, n_calibration, verbose)
+        threshold = calibration["suggested_threshold"]
+        if verbose:
+            logger.info(f"Using auto-calibrated threshold: {threshold:.3f}")
+    elif threshold is None:
+        threshold = 0.5
+        if verbose:
+            logger.info(f"Using default threshold: {threshold}")
+    else:
+        if verbose:
+            logger.info(f"Using user-specified threshold: {threshold}")
+
+    # Run full Monte Carlo
+    if verbose:
+        logger.info(f"Running Monte Carlo with {n_runs} runs...")
+
+    monte_carlo_code = f'''
+import json
+
+{model_code}
+
+# Override threshold
+THRESHOLD = {threshold}
+
+results = run_monte_carlo(n_runs={n_runs}, threshold=THRESHOLD)
+print(json.dumps(results))
+'''
+
+    result = sbx.run_code(monte_carlo_code)
+
+    if result.error:
+        logger.error(f"Monte Carlo failed: {result.error}")
+        return {
+            "probability": 0.0,
+            "n_runs": n_runs,
+            "results": [],
+            "ci_95": 0.0,
+            "threshold_used": threshold,
+            "calibration": calibration,
+            "error": str(result.error)
+        }
+
+    # Get output from logs.stdout
+    output = ""
+    if result.logs and result.logs.stdout:
+        output = "".join(result.logs.stdout).strip()
+    elif result.text:
+        output = result.text.strip()
+
+    if not output:
+        logger.error("Monte Carlo produced no output")
+        return {
+            "probability": 0.0,
+            "n_runs": n_runs,
+            "results": [],
+            "ci_95": 0.0,
+            "threshold_used": threshold,
+            "calibration": calibration,
+            "error": "No output from Monte Carlo"
+        }
+
+    try:
+        mc_results = json.loads(output)
+        mc_results["threshold_used"] = threshold
+        mc_results["calibration"] = calibration
+
+        if verbose:
+            logger.info(f"Monte Carlo results: probability={mc_results['probability']:.1%} "
+                       f"± {mc_results['ci_95']:.1%}")
+
+        return mc_results
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse Monte Carlo result: {e}")
+        return {
+            "probability": 0.0,
+            "n_runs": n_runs,
+            "results": [],
+            "ci_95": 0.0,
+            "threshold_used": threshold,
+            "calibration": calibration,
+            "error": f"Parse error: {e}"
+        }
+
+
+async def calibrate_threshold(
+    sbx: Sandbox,
+    model_code: str,
+    n_calibration: int = 50,
+    verbose: bool = True
+) -> dict:
+    """Async wrapper for calibrate_threshold_sync."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, calibrate_threshold_sync, sbx, model_code, n_calibration, verbose
+    )
+
+
+async def run_monte_carlo(
+    sbx: Sandbox,
+    model_code: str,
+    n_runs: int = 200,
+    threshold: float = None,
+    auto_calibrate: bool = True,
+    n_calibration: int = 50,
+    verbose: bool = True,
+    install_deps: bool = True
+) -> dict:
+    """Async wrapper for run_monte_carlo_sync."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, run_monte_carlo_sync, sbx, model_code, n_runs, threshold,
+        auto_calibrate, n_calibration, verbose, install_deps
+    )
+
+
 async def test_sandbox():
     """Test E2B sandbox with MCP gateway."""
     sbx = await create_sandbox()

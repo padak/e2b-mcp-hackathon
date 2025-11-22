@@ -287,7 +287,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   # Should fix and return working result (or fallback)
   ```
 
-- [ ] **7.5** Auto-calibrate threshold
+- [x] **7.5** Auto-calibrate threshold
   - Run calibration pass (50 runs) before full Monte Carlo
   - Analyze distribution: min, max, mean, std
   - Set threshold = mean (ensures ~50% variance)
