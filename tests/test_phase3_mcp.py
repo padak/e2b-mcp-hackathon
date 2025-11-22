@@ -1,6 +1,7 @@
 """Tests for Phase 3: Perplexity MCP Client."""
 
 import pytest
+import asyncio
 from src.sandbox.runner import create_sandbox
 from src.mcp_clients.perplexity_client import create_mcp_client, search
 
@@ -9,12 +10,13 @@ from src.mcp_clients.perplexity_client import create_mcp_client, search
 async def test_mcp_client_connection(check_api_keys):
     """Test MCP client connection to gateway."""
     sbx = await create_sandbox()
+    loop = asyncio.get_event_loop()
 
     try:
         async with create_mcp_client(sbx) as session:
             assert session is not None
     finally:
-        await sbx.kill()
+        await loop.run_in_executor(None, sbx.kill)
 
 
 @pytest.mark.asyncio

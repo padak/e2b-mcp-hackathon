@@ -104,11 +104,8 @@ async def run_simulation(market: dict) -> None:
                 research=research
             )
 
-            # Save generated code locally for debugging
-            debug_path = os.path.join(os.path.dirname(__file__), '..', 'debug_model.py')
-            with open(debug_path, 'w') as f:
-                f.write(code)
-            console.print(f"[dim]Model saved to: {debug_path}[/dim]")
+            # Store code for later saving to results
+            generated_code = code
 
             # Load fallback
             fallback_path = os.path.join(
@@ -155,11 +152,9 @@ async def run_simulation(market: dict) -> None:
             html_path = results_dir / "result.html"
             html_path.write_text(html)
 
-            # Copy generated model
+            # Save generated model
             model_path = results_dir / "model.py"
-            debug_model_path = Path(__file__).parent.parent / "debug_model.py"
-            if debug_model_path.exists():
-                model_path.write_text(debug_model_path.read_text())
+            model_path.write_text(generated_code)
 
             url = f"file://{html_path.absolute()}"
 
