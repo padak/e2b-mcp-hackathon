@@ -27,6 +27,12 @@ class ExecutionResult:
     n_runs: int = 0
     results: Optional[list] = None
     used_fallback: bool = False
+    outcome_mean: Optional[float] = None
+    outcome_std: Optional[float] = None
+    outcome_min: Optional[float] = None
+    outcome_max: Optional[float] = None
+    calibration_data: Optional[dict] = None
+    retries: int = 0
 
 
 def execute_with_retry_sync(
@@ -158,7 +164,8 @@ def execute_monte_carlo_sync(
     max_retries: int = 5,
     fallback_code: Optional[str] = None,
     auto_calibrate: bool = True,
-    n_calibration: int = 50
+    n_calibration: int = 50,
+    simulation_mode: str = None
 ) -> ExecutionResult:
     """
     Execute Monte Carlo simulation with retry loop (sync version).
@@ -181,7 +188,20 @@ def execute_monte_carlo_sync(
     import re
     import json as json_module
 
+    # Get simulation mode from env if not provided
+    if simulation_mode is None:
+        simulation_mode = os.getenv("SIMULATION_MODE", "threshold")
+
+    logger.info(f"Simulation mode: {simulation_mode}")
+
     current_code = code
+
+    # Update code to use the specified mode
+    current_code = re.sub(
+        r'mode = os\.getenv\("SIMULATION_MODE", "threshold"\)',
+        f'mode = "{simulation_mode}"',
+        current_code
+    )
 
     # Auto-calibrate threshold if enabled
     if auto_calibrate:
@@ -301,11 +321,20 @@ def execute_monte_carlo_sync(
             result.n_runs = data["n_runs"]
             result.results = data["results"]
 
+            # Get outcome stats if available
+            result.outcome_mean = data.get("outcome_mean")
+            result.outcome_std = data.get("outcome_std")
+            result.outcome_min = data.get("outcome_min")
+            result.outcome_max = data.get("outcome_max")
+
             # Log final results
             yes_count = sum(result.results)
             no_count = result.n_runs - yes_count
             logger.info(f"Monte Carlo complete: {result.probability:.1%} ± {result.ci_95:.1%} "
                        f"({yes_count} yes / {no_count} no)")
+            if result.outcome_mean is not None:
+                logger.info(f"Outcome stats: mean={result.outcome_mean:.3f}, std={result.outcome_std:.3f}, "
+                           f"range=[{result.outcome_min:.3f}, {result.outcome_max:.3f}]")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
             result.success = False
             result.error = f"Failed to parse output: {result.output[:500]}... Error: {e}"
@@ -320,12 +349,13 @@ async def execute_monte_carlo(
     max_retries: int = 5,
     fallback_code: Optional[str] = None,
     auto_calibrate: bool = True,
-    n_calibration: int = 50
+    n_calibration: int = 50,
+    simulation_mode: str = None
 ) -> ExecutionResult:
     """Async wrapper for execute_monte_carlo_sync."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None, lambda: execute_monte_carlo_sync(
-            sbx, code, n_runs, max_retries, fallback_code, auto_calibrate, n_calibration
+            sbx, code, n_runs, max_retries, fallback_code, auto_calibrate, n_calibration, simulation_mode
         )
     )

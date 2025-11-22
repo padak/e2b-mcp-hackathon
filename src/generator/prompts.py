@@ -56,12 +56,28 @@ class SimulationModel(Model):
         results = self.get_results()
         return results["final_outcome"] > threshold
 
-def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5):
+def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5, mode: str = "threshold"):
     results = []
+    outcomes = []
+
     for seed in range(n_runs):
         model = SimulationModel(seed=seed)
-        outcome = model.run_trial(threshold)
-        results.append(1 if outcome else 0)
+
+        # Run simulation
+        for _ in range(100):
+            model.step()
+        model_results = model.get_results()
+        outcome_value = model_results["final_outcome"]
+        outcomes.append(outcome_value)
+
+        if mode == "probability":
+            # Use outcome directly as probability, sample from it
+            success = np.random.random() < outcome_value
+        else:
+            # Traditional threshold mode
+            success = outcome_value > threshold
+
+        results.append(1 if success else 0)
 
     probability = sum(results) / len(results)
     ci_95 = 1.96 * (probability * (1 - probability) / n_runs) ** 0.5
@@ -70,11 +86,17 @@ def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5):
         "probability": probability,
         "n_runs": n_runs,
         "results": results,
-        "ci_95": ci_95
+        "ci_95": ci_95,
+        "outcome_mean": float(np.mean(outcomes)),
+        "outcome_std": float(np.std(outcomes)),
+        "outcome_min": float(np.min(outcomes)),
+        "outcome_max": float(np.max(outcomes)),
     }}
 
 if __name__ == "__main__":
-    results = run_monte_carlo(n_runs=200, threshold=THRESHOLD)
+    import os
+    mode = os.getenv("SIMULATION_MODE", "threshold")
+    results = run_monte_carlo(n_runs=200, threshold=THRESHOLD, mode=mode)
     print(json.dumps(results))
 '''
 
@@ -152,6 +174,26 @@ THRESHOLD = 0.5  # Outcome > threshold means "Yes"
 - compute_outcome returns 0-1 (higher = more likely "Yes")
 - Keep it simple - max 50 agents total
 - Access model state via self.model.param_name
+
+## CRITICAL: THRESHOLD Calibration
+The THRESHOLD must match the OUTPUT RANGE of your compute_outcome function!
+
+Example 1 - WRONG:
+- compute_outcome returns values in range 0.05-0.20
+- THRESHOLD = 0.5
+- Result: 0% Yes (nothing ever exceeds 0.5)
+
+Example 2 - CORRECT:
+- compute_outcome returns values in range 0.05-0.20
+- THRESHOLD = 0.12 (middle of the output range)
+- Result: ~50% Yes (reasonable variance)
+
+Example 3 - CORRECT:
+- compute_outcome returns values in range 0.3-0.7
+- THRESHOLD = 0.5 (middle of the output range)
+- Result: Good variance around 50%
+
+ALWAYS set THRESHOLD to be in the MIDDLE of your compute_outcome's expected output range to ensure meaningful variance in results.
 """
 
 USER_PROMPT_TEMPLATE = """## Prediction Market Question

@@ -41,6 +41,73 @@ def get_client() -> ClobClient:
     return _client
 
 
+def get_biggest_movers(category: str, limit: int = 10) -> list:
+    """
+    Get biggest movers (breaking news) by category from Polymarket.
+
+    Args:
+        category: Category name (politics, world, sports, crypto, finance, tech, culture)
+        limit: Maximum number of markets to return
+
+    Returns:
+        List of market objects with price changes
+    """
+    with httpx.Client() as client:
+        response = client.get(
+            "https://polymarket.com/api/biggest-movers",
+            params={"category": category}
+        )
+        if response.status_code != 200:
+            return []
+        data = response.json()
+
+    markets = data.get("markets", [])
+    return markets[:limit]
+
+
+def search_markets(query: str, limit: int = 10) -> list:
+    """
+    Search markets using Polymarket public search API.
+
+    Args:
+        query: Search query string
+        limit: Maximum number of markets to return
+
+    Returns:
+        List of market objects sorted by volume
+    """
+    with httpx.Client() as client:
+        response = client.get(
+            f"{GAMMA_API_URL}/public-search",
+            params={
+                "q": query,
+                "limit_per_type": 50,
+            }
+        )
+        if response.status_code != 200:
+            return []
+        data = response.json()
+
+    # Extract active markets from events
+    markets = []
+    for event in data.get("events", []):
+        for market in event.get("markets", []):
+            if not market.get("closed", False):
+                markets.append(market)
+
+    # Dedupe and sort by volume
+    seen = set()
+    unique = []
+    for m in markets:
+        mid = m.get("id")
+        if mid not in seen:
+            seen.add(mid)
+            unique.append(m)
+
+    unique.sort(key=lambda m: float(m.get("volumeNum") or 0), reverse=True)
+    return unique[:limit]
+
+
 def get_markets(limit: int = 100, active_only: bool = True) -> list:
     """
     Fetch prediction markets from Polymarket using Gamma API.
