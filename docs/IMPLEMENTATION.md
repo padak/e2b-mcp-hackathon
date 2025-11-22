@@ -7,12 +7,16 @@
 ANTHROPIC_API_KEY=sk-ant-...      # Claude API
 E2B_API_KEY=e2b_...               # E2B sandbox
 PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
+POLYMARKET_API_KEY=...            # Polymarket CLOB API
+POLYMARKET_SECRET=...             # Polymarket secret
+POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 ```
 
 ### Get API keys:
 - **Anthropic**: https://console.anthropic.com/
 - **E2B**: https://e2b.dev/dashboard
 - **Perplexity**: https://www.perplexity.ai/settings/api
+- **Polymarket**: https://polymarket.com/settings/api
 
 ---
 
@@ -38,6 +42,10 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
   plotly
   rich
   python-dotenv
+  mesa
+  numpy
+  pandas
+  py-clob-client
   ```
 
 - [ ] **1.3** Install dependencies
@@ -47,7 +55,17 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 
 - [ ] **1.4** Verify `.env` has all API keys
   ```bash
-  python -c "from dotenv import load_dotenv; import os; load_dotenv(); print('ANTHROPIC:', 'OK' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING'); print('E2B:', 'OK' if os.getenv('E2B_API_KEY') else 'MISSING'); print('PERPLEXITY:', 'OK' if os.getenv('PERPLEXITY_API_KEY') else 'MISSING')"
+  python -c "from dotenv import load_dotenv; import os; load_dotenv(); keys = ['ANTHROPIC_API_KEY', 'E2B_API_KEY', 'PERPLEXITY_API_KEY', 'POLYMARKET_API_KEY', 'POLYMARKET_SECRET', 'POLYMARKET_PASSPHRASE']; [print(f'{k}: {\"OK\" if os.getenv(k) else \"MISSING\"}') for k in keys]"
+  ```
+
+- [ ] **1.5** Create `__init__.py` files for package imports
+  ```bash
+  touch src/__init__.py
+  touch src/mcp/__init__.py
+  touch src/generator/__init__.py
+  touch src/sandbox/__init__.py
+  touch src/viz/__init__.py
+  touch src/models/__init__.py
   ```
 
 ---
@@ -126,30 +144,61 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 ## Phase 4: Polymarket Client
 
 - [ ] **4.1** Create `src/mcp/polymarket.py`
+  - Use official `py-clob-client`
   - Function: `get_markets() -> list[Market]`
-  - Function: `get_market_details(market_id: str) -> MarketDetails`
-  - Use httpx for API calls (no auth needed)
+  - Function: `get_market_details(condition_id: str) -> MarketDetails`
   ```python
-  # Polymarket CLOB API
-  BASE_URL = "https://clob.polymarket.com"
+  from py_clob_client.client import ClobClient
+  from py_clob_client.clob_types import ApiCreds
 
-  async def get_markets():
-      async with httpx.AsyncClient() as client:
-          resp = await client.get(f"{BASE_URL}/markets")
-          return resp.json()
+  # Initialize client
+  client = ClobClient(
+      host="https://clob.polymarket.com",
+      chain_id=137,  # Polygon
+      key=os.getenv("POLYMARKET_API_KEY"),
+      creds=ApiCreds(
+          api_key=os.getenv("POLYMARKET_API_KEY"),
+          api_secret=os.getenv("POLYMARKET_SECRET"),
+          api_passphrase=os.getenv("POLYMARKET_PASSPHRASE"),
+      )
+  )
+
+  def get_markets():
+      return client.get_markets()
+
+  def get_market_details(condition_id: str):
+      return client.get_market(condition_id)
   ```
 
 - [ ] **4.2** Test Polymarket API
   ```python
-  markets = await get_markets()
+  markets = get_markets()
   # Should return list of active prediction markets
   print(f"Found {len(markets)} markets")
+
+  # Get specific market
+  market = get_market_details("0x...")
+  print(f"Question: {market.question}")
+  print(f"Outcomes: {market.tokens}")  # Yes/No with prices
   ```
 
 - [ ] **4.3** Create market selector
   - Filter by volume, category
-  - Extract: question, odds, deadline
+  - Extract: question, outcome prices (odds), deadline
   - Format for display and LLM
+  ```python
+  def select_high_volume_markets(markets, min_volume=10000):
+      return [m for m in markets if m.volume >= min_volume]
+
+  def format_for_llm(market):
+      return {
+          "question": market.question,
+          "yes_odds": market.tokens[0].price,  # 0-1
+          "no_odds": market.tokens[1].price,
+          "volume": market.volume,
+          "end_date": market.end_date_iso
+      }
+  ```
 
 ---
 
@@ -201,18 +250,34 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 
 ---
 
-## Phase 7: Retry Loop
+## Phase 7: Retry Loop & Monte Carlo
 
 - [ ] **7.1** Create `src/sandbox/retry.py`
   - Function: `execute_with_retry(sbx, code: str, max_retries: int = 5) -> Result`
   - On error: send error + code to LLM for fix
   - Return success result or fallback to reference model
 
-- [ ] **7.2** Create `src/generator/fixer.py`
+- [ ] **7.2** Monte Carlo wrapper
+  - LLM generates code with `run_trial(seed) -> bool` function
+  - Wrapper runs 200 trials with different seeds
+  - Aggregates binary results into probability
+  ```python
+  def run_monte_carlo(run_trial_func, n_runs=200):
+      results = [run_trial_func(seed) for seed in range(n_runs)]
+      probability = sum(results) / len(results)
+      return {
+          "probability": probability,
+          "n_runs": n_runs,
+          "results": results,  # raw [0,1,1,0,...]
+          "ci_95": 1.96 * (probability * (1-probability) / n_runs) ** 0.5
+      }
+  ```
+
+- [ ] **7.3** Create `src/generator/fixer.py`
   - Function: `fix_code(code: str, error: str) -> str`
   - LLM analyzes error and fixes code
 
-- [ ] **7.3** Test retry loop
+- [ ] **7.4** Test retry loop
   ```python
   # Intentionally broken code
   broken = "import mesa\nprint(undefined_var)"
@@ -225,16 +290,48 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 ## Phase 8: Visualization
 
 - [ ] **8.1** Create `src/viz/plotter.py`
-  - Function: `create_chart(simulation: dict) -> str`
-  - Plotly chart showing simulation distribution
-  - Returns HTML string
+  - Function: `create_chart(simulation: dict, market_odds: float) -> str`
+  - Returns interactive HTML string
+
+  **Chart spec:**
+  - Histogram of simulation results (200 binary outcomes)
+  - Vertical dashed line = Polymarket odds (e.g., 72%)
+  - Annotation: "Polymarket: 72%"
+  - Summary box in corner:
+    - Simulation: 65% ± 6%
+    - Market: 72%
+    - Difference: -7pp
+  - Title: market question
+
+  ```python
+  import plotly.graph_objects as go
+
+  def create_chart(simulation: dict, market_odds: float, title: str) -> str:
+      prob = simulation["probability"]
+      ci = simulation["ci_95"]
+
+      fig = go.Figure()
+      # Histogram of results
+      fig.add_trace(go.Histogram(x=simulation["results"], nbinsx=2))
+      # Market odds line
+      fig.add_vline(x=market_odds, line_dash="dash",
+                    annotation_text=f"Market: {market_odds:.0%}")
+      # Summary annotation
+      fig.add_annotation(
+          text=f"Simulation: {prob:.0%} ± {ci:.0%}<br>Market: {market_odds:.0%}",
+          xref="paper", yref="paper", x=0.95, y=0.95
+      )
+      return fig.to_html()
+  ```
 
 - [ ] **8.2** Test visualization
   ```python
   html = create_chart(
-      simulation={"mean": 0.65, "std": 0.1, "samples": [...]}
+      simulation={"probability": 0.65, "ci_95": 0.06, "results": [...]},
+      market_odds=0.72,
+      title="Will Fed cut rates in December?"
   )
-  # Should create HTML file with interactive chart
+  # Should create interactive HTML with histogram + market line
   ```
 
 ---
@@ -247,9 +344,46 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 
 - [ ] **9.2** Create `src/cli.py`
   - Interactive CLI with Rich
-  - Input topic/question
-  - Display progress
-  - Open visualization
+  - Menu: list markets, select market, run simulation
+  - Display progress with Rich spinners/progress bars
+  - Show result URL from E2B sandbox
+  ```python
+  from rich.console import Console
+  from rich.prompt import Prompt
+
+  console = Console()
+
+  # Main menu
+  def main():
+      console.print("[bold]News Scenario Simulator[/bold]")
+
+      # 1. List markets
+      markets = get_markets()
+      for i, m in enumerate(markets[:10]):
+          console.print(f"{i+1}. {m.question} ({m.volume})")
+
+      # 2. Select market
+      choice = Prompt.ask("Select market", default="1")
+      market = markets[int(choice)-1]
+
+      # 3. Run pipeline
+      with console.status("Researching..."):
+          research = await perplexity_search(market.question)
+
+      with console.status("Generating simulation..."):
+          code = generate_model(market, research)
+
+      with console.status("Running Monte Carlo (200 runs)..."):
+          result = await execute_with_retry(sandbox, code)
+
+      # 4. Serve result from E2B
+      html = create_chart(result, market.yes_odds, market.question)
+      await sandbox.files.write('/tmp/result.html', html)
+      sandbox.commands.run('python -m http.server 8080 -d /tmp', background=True)
+
+      host = sandbox.get_host(8080)
+      console.print(f"\n[green bold]Result:[/green bold] https://{host}/result.html")
+  ```
 
 ---
 
@@ -277,13 +411,20 @@ PERPLEXITY_API_KEY=pplx-...       # Perplexity (used via MCP in E2B)
 
 ## Phase 11: Demo Prep
 
-- [ ] **11.1** Cache Perplexity responses for demo reliability
+- [ ] **11.1** Pre-select good Polymarket topic for demo
+  - High volume market (>$100k)
+  - Clear Yes/No question
+  - Interesting for audience (Fed rates, elections, crypto)
 
-- [ ] **11.2** Pre-select good Polymarket topic for demo
+- [ ] **11.2** Test full flow 3 times without errors
 
-- [ ] **11.3** Test full flow 3 times without errors
+- [ ] **11.3** Record demo video
 
-- [ ] **11.4** Record demo video
+- [ ] **11.4** (Optional) Web UI extension
+  - Simple Flask/FastAPI served from E2B
+  - Form for market selection
+  - Real-time progress updates
+  - Embedded Plotly chart
 
 ---
 
