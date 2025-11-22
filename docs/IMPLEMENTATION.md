@@ -48,7 +48,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   py-clob-client
   ```
 
-- [ ] **1.3** Install dependencies
+- [ ] **1.3** Install dependencies in .venv
   ```bash
   pip install -r requirements.txt
   ```
