@@ -1,0 +1,50 @@
+As of late November 2025, current data and expert analysis indicate the Federal Reserve is set to cut interest rates **two additional times in 2025**, not three, based on its latest public signals and major financial institutions' forecasts[1][4][7]. Market expectations and economic data suggest that three rate cuts in 2025 are possible, but the prevailing consensus is for slightly fewer, with the possibility of a third dependent on labor market and inflation developments[6][7].
+
+**Recent News and Data**
+- The Fed recently cut its benchmark interest rate by 0.25% in October, bringing the federal funds rate to a range of 3.75%–4.0%, the lowest in nearly three years[8].
+- Market pricing currently implies a roughly 72% chance of another 0.25% rate cut at the December 2025 meeting[5].
+- The Fed signaled at its latest meeting that, after the expected December cut, it anticipates **two more cuts in 2025** and at least one in 2026[1][4][7].
+- Major banks' most updated forecasts closely match this outlook: J.P. Morgan's economists, for example, currently project two more in 2025 and one in 2026[7].
+
+**Market and Expert Opinions**
+- **Market sentiment**: As of the latest updates, market participants anticipate two, possibly three, rate cuts in 2025, but expectations remain sensitive to economic data releases[1][3][5].
+- **Wall Street banks**: In late 2024, large firms like Goldman Sachs, Deutsche Bank, and JP Morgan expected three cuts, but recent signals, including those from Morgan Stanley and Wilmington Trust, suggest the Fed may stick with two[2].
+- **Fed’s outlook**: Fed officials have emphasized their data-dependent approach, noting that significant labor market softening or a clearer drop in inflation would be needed to support a more aggressive cutting cycle[6][7].
+
+**Key Statistics**
+- **Federal funds rate**: Currently at 3.75%–4.0% after October's cut[6][8].
+- **Treasury yields**: One-year yields have dropped around 1.5 percentage points since mid-2025, indicating markets are positioning for several more cuts through 2025 and into 2026[1].
+- **Jobs**: Upward revisions to jobless claims and a weakening labor market are prompting cautious optimism among investors[1][4][6].
+
+**Factors Influencing Rate Cuts**
+- **Inflation trajectory**: Inflation remains sticky, partially due to tariffs and global supply chain factors. If inflation doesn’t approach the Fed’s 2% target, fewer cuts are likely[1][2][6].
+- **Labor market**: Signs of rising unemployment or weaker hiring would strengthen the case for more rate cuts; conversely, strong jobs data could lead to a slower pace[4][6][7].
+- **Economic growth**: A resilient economy supports a slower, more measured rate-cutting process[2][6].
+- **Political policy**: Tariffs, tax policy, and fiscal decisions from the new presidential administration could also sway the Fed’s plans[2][4].
+
+**Summary Table: 2025 Fed Rate Cut Expectations**
+
+| Source/Forecast           | Projected Cuts in 2025 |
+|-------------------------- |-----------------------|
+| Fed signals (Oct/Nov 2025) | 2                    |
+| J.P. Morgan, Nuveen        | 2                    |
+| Major banks (late 2024)    | 2–3                  |
+| Market (CME FedWatch)      | 2–3                  |
+| Key risk factors           | Inflation, jobs      |
+
+**Conclusion:**  
+**Three Fed rate cuts in 2025 remain possible, but most current signals—from the Fed, market prices, and bank economists—support a base case of two, with a third possible only if economic conditions, especially labor market weakness and falling inflation, justify it**. As major data releases (jobs, inflation) approach, these expectations could still shift[1][4][6][7].
+
+Citations:
+[1] https://www.gonzaga.edu/news-events/stories/2025/10/22/federal-reserve-cuts-rates-to-boost-jobs-and-prevent-recession
+[2] https://www.youtube.com/watch?v=PbsmGDwTtJg
+[3] https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html
+[4] https://www.nuveen.com/en-us/insights/investment-outlook/fed-update
+[5] https://www.usbank.com/investing/financial-perspectives/market-news/federal-reserve-tapering-asset-purchases.html
+[6] https://www.usbank.com/investing/financial-perspectives/market-news/federal-reserve-interest-rate.html
+[7] https://www.jpmorgan.com/insights/global-research/economy/fed-rate-cuts
+[8] https://www.fidelity.com/learning-center/trading-investing/the-fed-meeting
+[9] https://www.bankrate.com/banking/federal-reserve/fomc-what-to-expect/
+[10] https://www.schwab.com/learn/story/fomc-meeting
+[11] https://www.morningstar.com/markets/when-will-fed-start-cutting-interest-rates
+[12] https://privatebank.jpmorgan.com/nam/en/insights/markets-and-investing/tmt/rate-cut-breakdown-what-you-need-to-know-now

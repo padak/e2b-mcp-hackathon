@@ -1,0 +1,44 @@
+The most recent market data show a **60–70% probability of a 25-basis-point Fed rate cut at the December 2025 meeting, with the remainder betting on no change**[1][2][4][5]. While futures and most analysts expect a cut, Fed Chair Jerome Powell’s recent remarks signaled greater uncertainty, pushing back against expectations for an automatic reduction[1][6].
+
+**Recent News and Market Context**
+- The Fed executed a 25-basis-point cut in October 2025, setting the current federal funds target range at **3.75%–4.00%**[2][5].
+- Leading into December, market odds for another cut dropped from above 80% to 60–70% after Powell stated the decision was "not a foregone conclusion," emphasizing a need for clearer disinflation and weaker labor data before additional easing[1][6].
+- **Fed futures and swaps** indicate investors remain split, with hedging evident in positioning, reflecting heightened uncertainty and volatility reminiscent of mid-2023[1].
+
+**Key Statistics and Expert Opinions**
+- **Core PCE inflation** is around **2.6%**, just above the Fed’s 2% target[1].
+- **Wage growth** has been firm, though job creation is slowing modestly[1].
+- Consensus economist forecasts (e.g., from J.P. Morgan and market surveys) generally expect the federal funds rate to decline to **3.5% by year-end**, but with increased caution about the number and timing of further cuts[2][3][4].
+- The Fed’s own September 2025 dot plot shows a median rate of **3.6% by end-2025**, implying one to two additional 25-basis-point cuts, but market participants sometimes price in a slightly more aggressive path[4].
+
+**Factors That Could Influence the Outcome**
+- **Employment:** A sharp uptick in unemployment claims or a weak payroll report could tip the Fed toward another cut[1].
+- **Inflation:** Sudden drops in CPI/PCE readings would bolster the case for cutting; stubborn or resurgent inflation could prompt a pause[1][2].
+- **Economic Growth:** Upgrades to U.S. GDP forecasts (e.g., to 1.5% for 2025) and strong business investment add to arguments for holding rates steady[6].
+- **Market Volatility and Financial Stability:** Surges in volatility or financial stress could change the Fed’s stance abruptly.
+
+**Summary Table – December 2025 FOMC Scenarios**
+
+| Outcome               | Probability   | Key Triggers                                  | Recent Commentary    |
+|-----------------------|--------------|-----------------------------------------------|---------------------|
+| 25 bps rate cut       | 60–70%       | Weak labor/inflation data                     | Market base case[1][2][4] |
+| No change             | 30–40%       | Resilient jobs, steady inflation, solid growth| Fed guidance, hawkish shift[1][5][6] |
+| 50 bps+ cut           | <10%         | Major downturn or severe economic shock       | Considered unlikely[1][2] |
+
+**Current Expert Consensus:**  
+Traders anticipate a modest cut, citing cooling inflation and softer labor, but volatility in positioning and Powell’s admonition that decisions will be data-dependent have left the race wide open[1][2][4][6]. A “no change” outcome, while a minority view, is plausible if inflation remains sticky or growth data surpass expectations[1][5][6].
+
+**Conclusion:**  
+While the market currently expects a cut, the possibility of no change after the December 2025 meeting remains credible and is gaining attention as economic data evolves and Fed communication becomes more cautious[1][2][5][6].
+
+Citations:
+[1] https://www.bitrue.com/blog/fed-interest-rate-prediction-december-2025
+[2] https://www.noradarealestate.com/blog/fed-interest-rate-predictions-for-the-december-2025-policy-meeting/
+[3] https://money.com/fed-rate-cut-prediction-december-2024/
+[4] https://www.noradarealestate.com/blog/fed-interest-rate-predictions-over-the-next-12-months/
+[5] https://tradingeconomics.com/united-states/interest-rate
+[6] https://www.nuveen.com/en-us/insights/investment-outlook/fed-update
+[7] https://www.morningstar.com/markets/when-will-fed-start-cutting-interest-rates
+[8] https://www.usbank.com/investing/financial-perspectives/market-news/federal-reserve-tapering-asset-purchases.html
+[9] https://www.schwab.com/learn/story/fomc-meeting
+[10] https://www.jpmorgan.com/insights/global-research/economy/fed-rate-cuts

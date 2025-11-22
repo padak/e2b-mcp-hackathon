@@ -1,0 +1,49 @@
+Current forecasts and expert commentary suggest that **US GDP growth in Q4 2025 is likely to fall within or very near the 1.5%–2.0% range**, though projections are subject to revision given the economic slowdown, recent policy uncertainty, and lingering effects of earlier shocks[2][3][6][7][16].
+
+**Recent News and Key Statistics**
+- Q2 2025 GDP growth was strong at **3.8% annualized**, but expectations for Q4 show a **notable slowdown**[1][13][15].
+- The median projection from major sources for **Q4 2025 GDP growth is around 2.1%**[2], with some forecasters placing it slightly lower. The Federal Reserve Bank of Philadelphia’s Q4 2025 survey shows consensus on **annual GDP growth of 1.9% for 2025**[3].
+- EY forecasts **Q4 2025 growth at 1.2% year-over-year (y/y)**, but 1.7% for the full year[16].
+- The Conference Board revised its Q4 2025 growth expectations **down to 1.5%** on a Q4-over-Q4 basis, due to cooling momentum and the impact of a government shutdown that is estimated to shave **~0.5 percentage points off quarterly growth**[6][7].
+
+| Source                         | Q4 2025 GDP Growth Estimate | Basis         |
+|-------------------------------|-----------------------------|--------------|
+| Trading Economics / Nowcast    | 2.1% (annualized)           | Latest       |
+| Philadelphia Fed SPF           | 1.9% (annual avg)           | Forecast     |
+| EY (September outlook)         | 1.2% (Q4 y/y), 1.7% (annual)| Forecast     |
+| Conference Board               | 1.5% (Q4/Q4)                | Forecast     |
+
+**Expert Opinions**
+- Most forecasting institutions and professional forecasters now see real growth slowing as consumer spending cools, following a strong post-pandemic surge[1][2][3][4][6].
+- The probability of recession has risen, with downside risks highlighted by several outlooks[4][6].
+- Economists attribute the slowdown to a mix of factors: higher interest rates, cooling labor market, persistent inflation pressures, and policy uncertainty (including the recent federal shutdown’s estimated effect on Q4 activity)[2][6][7][16].
+
+**Factors Influencing Q4 2025 GDP Outcome**
+- **Monetary Policy:** Tighter interest rates have moderated borrowing and investment, weighing on demand[2][4][10].
+- **Government Shutdown:** Ripple effects from suspended contracts and spending are expected to dampen Q4 GDP, but some losses may be recouped early in 2026[7].
+- **Consumer Spending:** Growth is moderating due to higher borrowing costs and cautious household sentiment[2][5].
+- **Business Investment:** Nonresidential investment faces headwinds from increased financing costs and policy uncertainty[2].
+- **Global Factors:** Weakness in global demand and trade disruptions could further restrain growth, although some sectors (such as AI related investment) offset declines[4].
+- **Risk of Further Slowdown:** If consumer confidence or the global outlook deteriorate, growth may underperform even these muted forecasts[2][4][5].
+
+**Summary**
+- The most authoritative estimates cluster around **1.5%–2.1%** for Q4 2025, with several experts assigning greater weight to risks on the downside, especially in light of recent federal disruptions and the softer trajectory for household spending and investment[2][3][6][7][16].
+- While the midpoint of forecasts is close to the prediction market range, there remains considerable uncertainty pending official BEA release (January 30, 2026) and evolving macro conditions.
+
+Citations:
+[1] https://tradingeconomics.com/united-states/gdp-growth
+[2] https://www.markets.com/news/u-s-q4-gdp-growth-projected-to-slow-following-robust-q3-increase/
+[3] https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/spf-q4-2025
+[4] https://www.ey.com/en_us/insights/strategy/macroeconomics/us-gdp
+[5] https://economic-research.bnpparibas.com/html/en-US/updated-scenario-forecasts-Economic-Research-3-November-2025-11/3/2025,51187
+[6] https://www.conference-board.org/podcasts/c-suite-perspectives/How-Badly-Will-Uncertainty-Hurt-US-GDP-Growth-in-2025/
+[7] https://www.conference-board.org/research/us-forecast
+[8] https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-united-states.html
+[9] https://www.atlantafed.org/cqer/research/gdpnow
+[10] https://www.ey.com/en_us/insights/strategy/global-economic-outlook
+[11] https://www.spglobal.com/ratings/en/regulatory/article/economic-outlook-us-q4-2025-below-trend-growth-persists-amid-a-swirl-of-policy-shifts-s101646549
+[12] https://www.markets.com/news/u-s-q4-gdp-growth-projected-to-slow-following-robust-q3-increase
+[13] https://www.bea.gov/data/gdp/gross-domestic-product
+[14] https://manifold.markets/chrisjbillington/do-professional-economic-forecaster
+[15] https://www.jec.senate.gov/public/index.cfm/republicans/gdp-update
+[16] https://www.ey.com/en_us/insights/strategy/macroeconomics/us-economic-outlook

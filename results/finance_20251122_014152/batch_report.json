@@ -1,0 +1,113 @@
+{
+  "batch_name": "finance",
+  "timestamp": "20251122_014152",
+  "total_markets": 8,
+  "successful": 8,
+  "failed": 0,
+  "results": [
+    {
+      "market": {
+        "question": "Will US GDP growth in Q4 2025 be between 1.5% and 2.0%?",
+        "yes_odds": 0.245,
+        "volume": 0.0,
+        "slug": "will-us-gdp-growth-in-q4-2025-be-between-1pt5-and-2pt0"
+      },
+      "success": true,
+      "probability": 0.495,
+      "ci_95": 0.06929299964642893,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/05_will-us-gdp-growth-in-q4-2025-be-between"
+    },
+    {
+      "market": {
+        "question": "Will Alphabet (GOOGL) be the top performing Magnificent 7 company during the week of November 17?",
+        "yes_odds": 1.0,
+        "volume": 0.0,
+        "slug": "will-alphabet-googl-be-the-top-performing-magnificent-7-company-during-the-week-of-november-17"
+      },
+      "success": true,
+      "probability": 1.0,
+      "ci_95": 0.0,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/08_will-alphabet-googl-be-the-top-performin"
+    },
+    {
+      "market": {
+        "question": "Will Alphabet be the third-largest company in the world by market cap on November 30?",
+        "yes_odds": 0.745,
+        "volume": 0.0,
+        "slug": "will-alphabet-be-the-third-largest-company-in-the-world-by-market-cap-on-november-30"
+      },
+      "success": true,
+      "probability": 0.705,
+      "ci_95": 0.06320430206876743,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/03_will-alphabet-be-the-third-largest-compa"
+    },
+    {
+      "market": {
+        "question": "Will 3 Fed rate cuts happen in 2025?",
+        "yes_odds": 0.65,
+        "volume": 0.0,
+        "slug": "will-3-fed-rate-cuts-happen-in-2025"
+      },
+      "success": true,
+      "probability": 0.65,
+      "ci_95": 0.066104614059837,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/02_will-3-fed-rate-cuts-happen-in-2025"
+    },
+    {
+      "market": {
+        "question": "No change in Fed interest rates after December 2025 meeting?",
+        "yes_odds": 0.325,
+        "volume": 0.0,
+        "slug": "no-change-in-fed-interest-rates-after-december-2025-meeting"
+      },
+      "success": true,
+      "probability": 0.7,
+      "ci_95": 0.06351125884439704,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/01_no-change-in-fed-interest-rates-after-de"
+    },
+    {
+      "market": {
+        "question": "Will NVIDIA be the largest company in the world by market cap on December 31?",
+        "yes_odds": 0.775,
+        "volume": 0.0,
+        "slug": "will-nvidia-be-the-largest-company-in-the-world-by-market-cap-on-december-31-2025"
+      },
+      "success": true,
+      "probability": 0.48,
+      "ci_95": 0.06924100519201032,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/06_will-nvidia-be-the-largest-company-in-th"
+    },
+    {
+      "market": {
+        "question": "Will annual inflation increase by 3.0% in October?",
+        "yes_odds": 0.989,
+        "volume": 0.0,
+        "slug": "will-annual-inflation-increase-by-3pt0-in-october"
+      },
+      "success": true,
+      "probability": 0.785,
+      "ci_95": 0.056937072281598736,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/04_will-annual-inflation-increase-by-3-0-in"
+    },
+    {
+      "market": {
+        "question": "Cardano ETF in 2025?",
+        "yes_odds": 0.165,
+        "volume": 0.0,
+        "slug": "cardano-etf-in-2025"
+      },
+      "success": true,
+      "probability": 0.79,
+      "ci_95": 0.0564500416297455,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/finance_20251122_014152/07_cardano-etf-in-2025"
+    }
+  ]
+}

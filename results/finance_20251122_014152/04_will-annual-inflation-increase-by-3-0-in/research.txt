@@ -1,0 +1,46 @@
+The most recent available data shows **U.S. annual inflation was 3.0% in September 2025**, and major forecasts expect October’s inflation to be very close to 3.0%[1][3][5][9]. The official October CPI release was delayed due to a government shutdown, so the actual figure has not been published as of November 22, 2025[3]. Nowcasts and expert expectations suggest October’s reading is likely to be near—but possibly just below—3.0%[7][1].
+
+**Recent Inflation and News**
+- **September 2025 inflation:** 3.0% (YoY) per CPI, up from 2.9% in August[1][5][3][9].
+- **Key drivers:** Energy prices notably rose in September (gasoline up 4.1% MoM, fuel oil up 4.1% YoY), along with moderate gains in shelter and continued tariff-related effects on certain goods[1].
+- **October data delay:** October’s official CPI release is postponed, leaving the market reliant on forecasts and models[3].
+
+**Current Forecasts and Nowcasts**
+- **Trading Economics** estimates **October 2025 inflation at 3.1%** by quarter’s end, based on macro forecasts[1].
+- **Federal Reserve Bank of Cleveland** nowcasting puts October 2025 **between 2.96% and 2.99%** YoY—slightly below 3.0%[7].
+- **5-year inflation expectations** are steady at **3.0%** as of October[1].
+
+**Expert Opinions**
+- **J.P. Morgan** indicates U.S. core inflation remains “sticky” and anticipates that the full impact of tariffs on consumer prices could take several months to be fully reflected, which could sustain inflation near the current level in late 2025[2].
+- Economists note that while energy and housing have contributed to recent increases, underlying inflation pressures may be moderating, with a rotation of price pressures and possible slow-down ahead[2][1].
+
+**Factors affecting the outcome**
+- **Energy price volatility:** September’s uptick was due in part to rising gasoline and fuel oil prices, but recent market trends show some softening in energy, which could temper October figures[2].
+- **Tariff impact:** New or expanded U.S. tariffs add uncertainty and could sustain inflation above the Federal Reserve’s target, though the effects may be lagged[2][1].
+- **Delayed government data:** The uncertainty from the lack of official October release may increase market volatility and risk for prediction markets[3].
+- **Consumer expectations:** Remain anchored around 3%, suggesting market participants do not expect dramatic increases[1][11][7].
+
+**Summary Table: Latest Annual Inflation Data & Forecasts**
+
+| Month        | Actual/Forecast | Source      |
+|--------------|----------------|-------------|
+| August 2025  | 2.9%           | CPI[1][9]   |
+| September 2025 | 3.0%         | CPI[1][3][5][9] |
+| October 2025 | 2.96–3.10% (model/nowcast) | Fed Cleveland[7], Trading Economics[1] |
+
+**Bottom Line:** While the data for October 2025 is pending, most forecasts and nowcasts point to **annual inflation being very close to 3.0%**, possibly within a few hundredths of a percentage point above or below[1][7][3]. Recent news highlights sticky inflation driven by energy and tariffs, with most experts expecting little change from September’s rate. The outcome of the prediction market question hinges on whether the official CPI release rounds to exactly 3.0%, or falls slightly above or below, which remains uncertain until new data is published.
+
+Citations:
+[1] https://tradingeconomics.com/united-states/inflation-cpi
+[2] https://www.jpmorgan.com/insights/global-research/economy/global-inflation-forecast
+[3] https://www.nerdwallet.com/investing/learn/inflation
+[4] https://www.brookings.edu/articles/what-are-inflation-expectations-why-do-they-matter/
+[5] https://home.treasury.gov/news/press-releases/sb0301
+[6] https://en.wikipedia.org/wiki/Inflation
+[7] https://www.clevelandfed.org/indicators-and-data/inflation-nowcasting
+[8] https://openknowledge.worldbank.org/entities/publication/69651dd3-b5ea-5fbf-8e6b-77f9766ccfeb
+[9] https://www.bls.gov/news.release/cpi.nr0.htm
+[10] https://openknowledge.worldbank.org/entities/publication/6bbb5ea9-6f51-52aa-9ddc-9a023f916b91
+[11] https://tradingeconomics.com/united-states/inflation-expectations
+[12] https://obr.uk/forecasts-in-depth/the-economy-forecast/inflation/
+[13] https://www.clevelandfed.org/indicators-and-data/inflation-expectations
