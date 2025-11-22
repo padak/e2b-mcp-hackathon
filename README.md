@@ -1,4 +1,6 @@
-# WorldSim Markets
+# PolyFuture: Future Predictions for Nerds, Normies & Agents
+
+### Get rich overnight: Know the future and bet safely on Polymarket
 
 **"What if we could simulate the world 200 times before placing a bet?"**
 
