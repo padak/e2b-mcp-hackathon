@@ -143,7 +143,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
 
 ## Phase 4: Polymarket Client
 
-- [ ] **4.1** Create `src/mcp/polymarket.py`
+- [x] **4.1** Create `src/mcp/polymarket.py`
   - Use official `py-clob-client`
   - Function: `get_markets() -> list[Market]`
   - Function: `get_market_details(condition_id: str) -> MarketDetails`
@@ -170,7 +170,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
       return client.get_market(condition_id)
   ```
 
-- [ ] **4.2** Test Polymarket API
+- [x] **4.2** Test Polymarket API
   ```python
   markets = get_markets()
   # Should return list of active prediction markets
@@ -182,7 +182,7 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   print(f"Outcomes: {market.tokens}")  # Yes/No with prices
   ```
 
-- [ ] **4.3** Create market selector
+- [x] **4.3** Create market selector
   - Filter by volume, category
   - Extract: question, outcome prices (odds), deadline
   - Format for display and LLM
