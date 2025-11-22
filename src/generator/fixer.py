@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_MODEL = os.getenv("ANTHROPIC_MODEL")
+if not DEFAULT_MODEL:
+    raise ValueError("ANTHROPIC_MODEL environment variable is required")
+
 FIXER_SYSTEM_PROMPT = """You are a Python code debugger specializing in Mesa 3.x agent-based simulations.
 
 Your task is to fix Python code that failed to execute. You will receive:
@@ -38,7 +42,7 @@ Rules:
 """
 
 
-async def fix_code(code: str, error: str, model: str = "claude-sonnet-4-20250514") -> str:
+async def fix_code(code: str, error: str, model: str = None) -> str:
     """
     Fix broken Python code using Claude.
 
@@ -67,7 +71,7 @@ async def fix_code(code: str, error: str, model: str = "claude-sonnet-4-20250514
 Return the fixed code:"""
 
     response = await client.messages.create(
-        model=model,
+        model=model or DEFAULT_MODEL,
         max_tokens=4096,
         system=FIXER_SYSTEM_PROMPT,
         messages=[
@@ -88,7 +92,7 @@ Return the fixed code:"""
     return fixed_code.strip()
 
 
-def fix_code_sync(code: str, error: str, model: str = "claude-sonnet-4-20250514") -> str:
+def fix_code_sync(code: str, error: str, model: str = None) -> str:
     """
     Synchronous version of fix_code.
     """
@@ -111,7 +115,7 @@ def fix_code_sync(code: str, error: str, model: str = "claude-sonnet-4-20250514"
 Return the fixed code:"""
 
     response = client.messages.create(
-        model=model,
+        model=model or DEFAULT_MODEL,
         max_tokens=4096,
         system=FIXER_SYSTEM_PROMPT,
         messages=[

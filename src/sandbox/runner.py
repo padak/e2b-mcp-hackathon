@@ -32,6 +32,7 @@ def create_sandbox_sync(verbose: bool = True) -> Sandbox:
         logger.debug(f"E2B_API_KEY present: {bool(os.getenv('E2B_API_KEY'))}")
 
     try:
+        # Note: Don't specify template when using MCP - default E2B template supports MCP gateway
         sbx = Sandbox.create(
             timeout=300,  # 5 minutes
             mcp={
@@ -80,7 +81,7 @@ def create_sandbox_without_mcp_sync(verbose: bool = True) -> Sandbox:
     if verbose:
         logger.info("Creating E2B sandbox without MCP...")
 
-    sbx = Sandbox.create(timeout=300)
+    sbx = Sandbox.create(template="code-interpreter-v1", timeout=300)
 
     if verbose:
         logger.info(f"Sandbox created: {sbx.sandbox_id}")
@@ -118,7 +119,7 @@ async def test_sandbox():
 
         # 2.4 Test Mesa installation and import
         print("Installing Mesa, plotly, pandas, numpy...")
-        await sbx.commands.run('pip install mesa plotly pandas numpy', timeout=120)
+        await sbx.commands.run('pip install mesa==2.1.5 plotly pandas numpy', timeout=120)
 
         result = await sbx.commands.run('''python3 -c "
 from mesa import Agent, Model

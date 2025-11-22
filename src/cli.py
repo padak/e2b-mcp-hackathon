@@ -85,10 +85,16 @@ async def run_simulation(market: dict) -> None:
         loop = asyncio.get_event_loop()
 
         try:
-            # Install dependencies
+            # Install dependencies from requirements-e2b.txt
             progress.update(task, description="Installing dependencies...")
+            req_path = os.path.join(os.path.dirname(__file__), '..', 'requirements-e2b.txt')
+            with open(req_path, 'r') as f:
+                req_content = f.read()
             await loop.run_in_executor(
-                None, lambda: sbx.commands.run('pip install mesa pandas numpy', timeout=120)
+                None, lambda: sbx.files.write('/tmp/requirements.txt', req_content)
+            )
+            await loop.run_in_executor(
+                None, lambda: sbx.commands.run('pip install -r /tmp/requirements.txt', timeout=180)
             )
 
             # Research
@@ -107,6 +113,12 @@ async def run_simulation(market: dict) -> None:
                 yes_odds=yes_odds,
                 research=research
             )
+
+            # Save generated code locally for debugging
+            debug_path = os.path.join(os.path.dirname(__file__), '..', 'debug_model.py')
+            with open(debug_path, 'w') as f:
+                f.write(code)
+            console.print(f"[dim]Model saved to: {debug_path}[/dim]")
 
             # Load fallback
             fallback_path = os.path.join(
@@ -154,6 +166,8 @@ async def run_simulation(market: dict) -> None:
                     background=True
                 )
             )
+            # Wait for server to start
+            await asyncio.sleep(2)
             host = sbx.get_host(8080)
             url = f"https://{host}/result.html"
 

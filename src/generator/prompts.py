@@ -1,130 +1,46 @@
 """
-Prompts for LLM model generation.
+Prompts for LLM model generation with template-based approach.
 """
 
-MESA_TECHNICAL_SPEC = """
-## Mesa 3.x API (CRITICAL - DO NOT USE DEPRECATED APIs)
-
-### Agent Creation - CRITICAL
-```python
+# Fixed template - LLM only fills in the marked sections
+MODEL_TEMPLATE = '''import random
+import json
 from mesa import Agent, Model
+from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
-class MyAgent(Agent):
-    def __init__(self, unique_id: int, model: "MyModel"):
-        # CRITICAL: Must pass model to super().__init__()
-        super().__init__(model)  # <-- REQUIRED! Will crash without model
-        self.unique_id = unique_id  # store it yourself
-        # your attributes here
-
-    def step(self):
-        # agent behavior
-        pass
-```
-
-### CRITICAL: Every Agent subclass MUST call super().__init__(model)
-If you forget to pass model, you get: TypeError: __init__() missing 1 required positional argument: 'model'
-
-### Model Creation
-```python
-class MyModel(Model):
-    def __init__(self, param1, param2, seed=None):
-        super().__init__()
-
-        if seed is not None:
-            random.seed(seed)
-
-        # Create agents (auto-registered in Mesa 3.x)
-        for i in range(num_agents):
-            MyAgent(i, self)
-
-        # Data collection
-        self.datacollector = DataCollector(
-            model_reporters={"Metric": compute_metric}
-        )
-
-    def step(self):
-        # Run all agents randomly
-        self.agents.shuffle_do("step")
-        self.datacollector.collect(self)
-```
-
-## FORBIDDEN - DO NOT USE:
-1. `from mesa.time import RandomActivation` - REMOVED in Mesa 3.x
-2. `super().__init__(unique_id, model)` - WRONG, use `super().__init__(model)`
-3. `self.schedule.add(agent)` - agents auto-register when created
-4. `self.schedule.step()` - use `self.agents.shuffle_do("step")`
-
-## Required Output Structure
-
-Your model MUST return this exact structure from run_monte_carlo():
-```python
-{
-    "probability": float,  # 0-1, the main result
-    "n_runs": int,         # number of trials (200)
-    "results": list[int],  # binary outcomes [0,1,1,0,...]
-    "ci_95": float         # 95% confidence interval
-}
-```
-
-## Execution Constraints
-- Python 3.12+ in E2B sandbox
-- Mesa 3.3.1
-- Timeout: 60 seconds total
-- Max agents: ~100 (for performance)
-- Steps per trial: ~100
-- n_runs: 200 Monte Carlo trials
-"""
-
-SYSTEM_PROMPT = f"""You are an expert agent-based modeling scientist. Your task is to generate a complete Mesa 3.x simulation model that answers a prediction market question.
-
-{MESA_TECHNICAL_SPEC}
-
-## Your Task
-
-Given:
-1. A prediction market question (Yes/No outcome)
-2. Research data about the topic
-
-Generate a complete Python simulation that:
-1. Models the relevant agents and their behaviors
-2. Simulates the scenario with realistic dynamics
-3. Returns a probability estimate via Monte Carlo simulation
-
-## Code Template
-
-Your code MUST follow this structure:
-
-```python
-import random
-from mesa import Agent, Model
-from mesa.datacollection import DataCollector
-
-# Define your agent classes here
-# Be creative - model the actual stakeholders/actors in the scenario
-
-def compute_outcome(model):
-    \"\"\"Calculate the outcome metric (0-1 scale).\"\"\"
-    # Your logic here
-    pass
+# ============== LLM GENERATED CODE START ==============
+{agent_code}
+# ============== LLM GENERATED CODE END ==============
 
 class SimulationModel(Model):
-    def __init__(self, seed=None, **params):
+    def __init__(self, seed=None):
         super().__init__()
 
         if seed is not None:
             random.seed(seed)
 
-        # Store parameters
-        # Create agents
-        # Setup datacollector
+        # Initialize model state
+        for key, value in MODEL_PARAMS.items():
+            setattr(self, key, value)
+
+        # Create scheduler (Mesa 2.x)
+        self.schedule = RandomActivation(self)
+
+        # Create agents from config
+        agent_id = 0
+        for agent_class, count in AGENT_CONFIG.items():
+            for _ in range(count):
+                agent = agent_class(agent_id, self)
+                self.schedule.add(agent)
+                agent_id += 1
 
         self.datacollector = DataCollector(
             model_reporters={{"Outcome": compute_outcome}}
         )
 
     def step(self):
-        self.agents.shuffle_do("step")
+        self.schedule.step()
         self.datacollector.collect(self)
 
     def get_results(self):
@@ -135,17 +51,15 @@ class SimulationModel(Model):
         }}
 
     def run_trial(self, threshold: float = 0.5) -> bool:
-        \"\"\"Run single trial, return True if outcome exceeds threshold.\"\"\"
         for _ in range(100):
             self.step()
         results = self.get_results()
         return results["final_outcome"] > threshold
 
-def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5, **params):
-    \"\"\"Run Monte Carlo simulation returning probability.\"\"\"
+def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5):
     results = []
     for seed in range(n_runs):
-        model = SimulationModel(seed=seed, **params)
+        model = SimulationModel(seed=seed)
         outcome = model.run_trial(threshold)
         results.append(1 if outcome else 0)
 
@@ -160,24 +74,63 @@ def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5, **params):
     }}
 
 if __name__ == "__main__":
-    import json
-    # Run with your chosen parameters
-    results = run_monte_carlo(n_runs=200, threshold=0.5)
-    # Print JSON output for parsing
+    results = run_monte_carlo(n_runs=200, threshold=THRESHOLD)
     print(json.dumps(results))
+'''
+
+SYSTEM_PROMPT = """You are an expert agent-based modeling scientist. Generate ONLY the agent classes and configuration for a Mesa 2.4.0 simulation.
+
+## CRITICAL Mesa 2.4.0 Agent Syntax
+
+Every agent MUST follow this exact pattern:
+```python
+class MyAgent(Agent):
+    def __init__(self, unique_id: int, model):
+        super().__init__(unique_id, model)  # Mesa 2.x: pass both unique_id and model
+        # your attributes here
+
+    def step(self):
+        # agent behavior - access model via self.model
+        pass
 ```
 
-## Guidelines for Model Design
+## Your Output Format
 
-1. **Identify the key actors** - Who are the agents that influence the outcome?
-2. **Define their behaviors** - How do they make decisions? What affects them?
-3. **Set the outcome metric** - What determines Yes vs No?
-4. **Calibrate threshold** - What metric value means "Yes" outcome?
+You must return EXACTLY this structure (no markdown, no explanations):
 
-## Output Format
+```
+# Agent classes
+class Agent1(Agent):
+    ...
 
-Return ONLY the complete Python code. No explanations, no markdown code blocks.
-The code must be immediately executable.
+class Agent2(Agent):
+    ...
+
+# Outcome computation
+def compute_outcome(model):
+    # Return float 0-1 representing probability of "Yes" outcome
+    ...
+
+# Configuration
+AGENT_CONFIG = {
+    Agent1: 10,
+    Agent2: 5,
+}
+
+MODEL_PARAMS = {
+    "param1": 0.5,
+    "param2": 0.8,
+}
+
+THRESHOLD = 0.5  # Outcome > threshold means "Yes"
+```
+
+## Rules
+- Create 2-4 agent types representing key actors
+- Each agent must have __init__ and step methods
+- compute_outcome returns 0-1 (higher = more likely "Yes")
+- Keep it simple - max 50 agents total
+- Access model state via self.model.param_name
 """
 
 USER_PROMPT_TEMPLATE = """## Prediction Market Question
@@ -191,14 +144,13 @@ USER_PROMPT_TEMPLATE = """## Prediction Market Question
 {research}
 
 ## Your Task
-Generate a complete Mesa 3.x simulation model that:
-1. Models this specific scenario with appropriate agents
-2. Uses the research data to calibrate parameters
-3. Returns a probability via Monte Carlo simulation (200 runs)
+Generate agent classes that model this scenario. Consider:
+1. Who are the key actors? (2-4 agent types)
+2. What behaviors influence the outcome?
+3. How to compute whether "Yes" wins?
 
-The model should capture the key dynamics that would determine whether the answer is Yes or No.
-
-Return ONLY executable Python code.
+Return ONLY the code (agents, compute_outcome, AGENT_CONFIG, MODEL_PARAMS, THRESHOLD).
+No explanations, no markdown blocks.
 """
 
 
@@ -210,3 +162,8 @@ def create_generation_prompt(question: str, yes_odds: float, research: str) -> s
         no_odds=1 - yes_odds,
         research=research
     )
+
+
+def assemble_code(agent_code: str) -> str:
+    """Combine LLM-generated agent code with the fixed template."""
+    return MODEL_TEMPLATE.format(agent_code=agent_code)

@@ -1,0 +1,4 @@
+mesa==2.1.5
+numpy
+pandas
+plotly

@@ -68,7 +68,7 @@ async def run_pipeline(
         if verbose:
             print("Installing dependencies...")
         await loop.run_in_executor(
-            None, lambda: sbx.commands.run('pip install mesa pandas numpy', timeout=120)
+            None, lambda: sbx.commands.run('pip install mesa==3.3.1 pandas numpy', timeout=120)
         )
 
         # Step 1: Research with Perplexity

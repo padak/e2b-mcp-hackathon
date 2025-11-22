@@ -1,16 +1,16 @@
-# Mesa 3.x Model Generation Guide for LLM
+# Mesa 2.x Model Generation Guide for LLM
 
-## Mesa 3.x API (CRITICAL)
+## Mesa 2.x API (CRITICAL)
 
 ### Agent Creation
 ```python
 from mesa import Agent, Model
+from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
 class MyAgent(Agent):
     def __init__(self, unique_id: int, model: "MyModel"):
-        super().__init__(model)  # Mesa 3.x: only model, no unique_id
-        self.unique_id = unique_id  # store it yourself
+        super().__init__(unique_id, model)  # Mesa 2.x: pass unique_id and model
         # your attributes here
 
     def step(self):
@@ -30,9 +30,13 @@ class MyModel(Model):
         # Store parameters
         self.param1 = param1
 
-        # Create agents (auto-registered in Mesa 3.x)
+        # Create scheduler (Mesa 2.x)
+        self.schedule = RandomActivation(self)
+
+        # Create agents and add to scheduler
         for i in range(num_agents):
-            MyAgent(i, self)
+            agent = MyAgent(i, self)
+            self.schedule.add(agent)
 
         # Data collection
         self.datacollector = DataCollector(
@@ -41,39 +45,38 @@ class MyModel(Model):
 
     def step(self):
         # Run all agents randomly
-        self.agents.shuffle_do("step")
+        self.schedule.step()
         self.datacollector.collect(self)
 ```
 
 ## Common Mistakes to Avoid
 
-1. **DO NOT use RandomActivation** - removed in Mesa 3.x
+1. **DO NOT forget to add agents to scheduler**
    ```python
    # WRONG
-   from mesa.time import RandomActivation
-   self.schedule = RandomActivation(self)
+   MyAgent(i, self)  # agent not scheduled
 
    # CORRECT
-   self.agents.shuffle_do("step")
-   ```
-
-2. **DO NOT pass unique_id to super().__init__**
-   ```python
-   # WRONG (Mesa 2.x style)
-   super().__init__(unique_id, model)
-
-   # CORRECT (Mesa 3.x)
-   super().__init__(model)
-   ```
-
-3. **DO NOT use self.schedule.add()** - agents auto-register
-   ```python
-   # WRONG
    agent = MyAgent(i, self)
    self.schedule.add(agent)
+   ```
 
-   # CORRECT
-   MyAgent(i, self)  # automatically added to self.agents
+2. **DO NOT forget unique_id in super().__init__**
+   ```python
+   # WRONG
+   super().__init__(model)
+
+   # CORRECT (Mesa 2.x)
+   super().__init__(unique_id, model)
+   ```
+
+3. **DO NOT use Mesa 3.x agent patterns**
+   ```python
+   # WRONG (Mesa 3.x style)
+   self.agents.shuffle_do("step")
+
+   # CORRECT (Mesa 2.x)
+   self.schedule.step()
    ```
 
 4. **Collect data AFTER agents step, not before**
@@ -143,7 +146,7 @@ def step(self):
 
 ```python
 def compute_health(model):
-    if len(model.agents) == 0:
+    if model.schedule.get_agent_count() == 0:
         return 0
 
     # Normalize metrics to 0-1 range
@@ -172,7 +175,7 @@ inflation_effect = 1 - (self.model.inflation / 20)
 ## Execution Environment
 
 - Python 3.12+ in E2B sandbox
-- Mesa 3.3.1
+- Mesa 2.1.5
 - Dependencies: mesa, numpy, pandas, plotly
 - Timeout: 60 seconds for model run
 - Max agents: ~100 (for performance)
@@ -183,6 +186,7 @@ inflation_effect = 1 - (self.model.inflation / 20)
 ```python
 import random
 from mesa import Agent, Model
+from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
 # Agent classes here
@@ -193,12 +197,27 @@ def compute_outcome(model):
 
 class SimulationModel(Model):
     def __init__(self, **params, seed=None):
-        # initialization
-        pass
+        super().__init__()
+
+        if seed is not None:
+            random.seed(seed)
+
+        # Create scheduler
+        self.schedule = RandomActivation(self)
+
+        # Create agents
+        for i in range(num_agents):
+            agent = MyAgent(i, self)
+            self.schedule.add(agent)
+
+        # Data collection
+        self.datacollector = DataCollector(
+            model_reporters={"Metric": compute_outcome}
+        )
 
     def step(self):
-        # step logic
-        pass
+        self.schedule.step()
+        self.datacollector.collect(self)
 
     def get_results(self):
         # return results dict

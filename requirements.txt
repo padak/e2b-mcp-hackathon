@@ -1,14 +1,14 @@
 anthropic
 e2b-code-interpreter
-mcp
 httpx
 pydantic
 plotly
 rich
 python-dotenv
-mesa
+mesa==2.1.5
 numpy
 pandas
 py-clob-client
 pytest
 pytest-asyncio
+mcp

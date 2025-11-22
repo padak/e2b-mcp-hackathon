@@ -287,6 +287,41 @@ POLYMARKET_PASSPHRASE=...         # Polymarket passphrase
   # Should fix and return working result (or fallback)
   ```
 
+- [ ] **7.5** Auto-calibrate threshold
+  - Run calibration pass (50 runs) before full Monte Carlo
+  - Analyze distribution: min, max, mean, std
+  - Set threshold = mean (ensures ~50% variance)
+  - If user specifies threshold, use that instead
+  ```python
+  def calibrate_threshold(sandbox, code: str, n_calibration: int = 50) -> float:
+      """Run calibration to find optimal threshold."""
+      outcomes = []
+      for seed in range(n_calibration):
+          model = run_single_trial(sandbox, code, seed)
+          outcomes.append(model.final_outcome)
+
+      return {
+          "min": min(outcomes),
+          "max": max(outcomes),
+          "mean": np.mean(outcomes),
+          "std": np.std(outcomes),
+          "suggested_threshold": np.mean(outcomes)
+      }
+
+  def run_monte_carlo_with_calibration(sandbox, code: str,
+                                        n_runs: int = 200,
+                                        user_threshold: float = None):
+      # 1. Calibrate
+      calibration = calibrate_threshold(sandbox, code)
+      threshold = user_threshold or calibration["suggested_threshold"]
+
+      # 2. Run full Monte Carlo with calibrated threshold
+      results = run_monte_carlo(sandbox, code, n_runs, threshold)
+      results["calibration"] = calibration
+      results["threshold_used"] = threshold
+      return results
+  ```
+
 ---
 
 ## Phase 8: Visualization

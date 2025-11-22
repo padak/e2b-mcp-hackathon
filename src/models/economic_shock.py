@@ -14,6 +14,7 @@ Output: Probability of positive economic outcome (binary for Monte Carlo)
 
 import random
 from mesa import Agent, Model
+from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
 
@@ -21,8 +22,7 @@ class InvestorAgent(Agent):
     """Investor agent that makes investment decisions based on interest rates and sentiment."""
 
     def __init__(self, unique_id: int, model: "EconomicModel"):
-        super().__init__(model)
-        self.unique_id = unique_id
+        super().__init__(unique_id, model)
         self.wealth = random.uniform(50, 150)
         self.invested = 0
         self.risk_tolerance = random.uniform(0.3, 0.9)
@@ -56,8 +56,7 @@ class ConsumerAgent(Agent):
     """Consumer agent that decides spending based on inflation and sentiment."""
 
     def __init__(self, unique_id: int, model: "EconomicModel"):
-        super().__init__(model)
-        self.unique_id = unique_id
+        super().__init__(unique_id, model)
         self.income = random.uniform(30, 100)
         self.savings = random.uniform(10, 50)
         self.spending_propensity = random.uniform(0.4, 0.8)
@@ -83,8 +82,7 @@ class FirmAgent(Agent):
     """Firm agent that makes production decisions based on economic conditions."""
 
     def __init__(self, unique_id: int, model: "EconomicModel"):
-        super().__init__(model)
-        self.unique_id = unique_id
+        super().__init__(unique_id, model)
         self.production_capacity = random.uniform(50, 150)
         self.inventory = random.uniform(10, 30)
         self.employees = random.randint(5, 20)
@@ -118,7 +116,7 @@ class FirmAgent(Agent):
 
 def compute_economic_health(model):
     """Compute overall economic health indicator."""
-    if len(model.agents) == 0:
+    if model.schedule.get_agent_count() == 0:
         return 0
 
     # Weighted combination of economic indicators (scaled for ~100 agents)
@@ -175,15 +173,21 @@ class EconomicModel(Model):
         self.total_production = 0
         self.employment_change = 0
 
-        # Create agents (Mesa 3.x auto-registers agents)
+        # Create scheduler (Mesa 2.x)
+        self.schedule = RandomActivation(self)
+
+        # Create agents and add to scheduler
         for i in range(num_investors):
-            InvestorAgent(i, self)
+            agent = InvestorAgent(i, self)
+            self.schedule.add(agent)
 
         for i in range(num_consumers):
-            ConsumerAgent(num_investors + i, self)
+            agent = ConsumerAgent(num_investors + i, self)
+            self.schedule.add(agent)
 
         for i in range(num_firms):
-            FirmAgent(num_investors + num_consumers + i, self)
+            agent = FirmAgent(num_investors + num_consumers + i, self)
+            self.schedule.add(agent)
 
         # Data collection
         self.datacollector = DataCollector(
@@ -204,8 +208,8 @@ class EconomicModel(Model):
         self.total_production = 0
         self.employment_change = 0
 
-        # Run all agents in random order (Mesa 3.x)
-        self.agents.shuffle_do("step")
+        # Run all agents in random order (Mesa 2.x)
+        self.schedule.step()
 
         # Collect data after step
         self.datacollector.collect(self)
@@ -315,7 +319,7 @@ if __name__ == "__main__":
     )
 
     print(f"Parameters: rate={model.interest_rate}%, inflation={model.inflation}%, sentiment={model.sentiment}")
-    print(f"Agents: {len(model.agents)}")
+    print(f"Agents: {model.schedule.get_agent_count()}")
 
     # Run simulation
     for _ in range(100):
