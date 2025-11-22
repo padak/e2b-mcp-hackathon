@@ -1,5 +1,6 @@
 import random
 import json
+import numpy as np
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
@@ -10,142 +11,164 @@ from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 import numpy as np
 
-class MaduroRegime(Agent):
+class RussianGovernment(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.control_strength = np.random.uniform(0.7, 0.9)
-        self.elite_loyalty = np.random.uniform(0.6, 0.85)
-        self.repression_capacity = np.random.uniform(0.65, 0.85)
+        self.territorial_control = 0.85
+        self.willingness_to_negotiate = 0.25
+        self.military_position = 0.70
+        self.preconditions_flexibility = 0.15
         
     def step(self):
-        foreign_pressure = np.mean([agent.pressure_level for agent in self.model.schedule.agents if isinstance(agent, ForeignActor)])
-        domestic_threat = np.mean([agent.opposition_strength for agent in self.model.schedule.agents if isinstance(agent, DomesticOpposition)])
+        war_exhaustion = self.model.war_exhaustion_factor
+        international_pressure = self.model.international_pressure
         
-        self.control_strength -= (foreign_pressure * 0.15 + domestic_threat * 0.08)
-        self.control_strength = max(0.0, min(1.0, self.control_strength))
-        
-        if domestic_threat > 0.4:
-            self.elite_loyalty -= np.random.uniform(0.02, 0.05)
+        if self.military_position > 0.6:
+            self.willingness_to_negotiate = max(0.1, self.willingness_to_negotiate - 0.02)
         else:
-            self.elite_loyalty += np.random.uniform(0.0, 0.02)
-        self.elite_loyalty = max(0.0, min(1.0, self.elite_loyalty))
+            self.willingness_to_negotiate = min(0.5, self.willingness_to_negotiate + 0.05)
         
-        self.repression_capacity = self.control_strength * 0.7 + self.elite_loyalty * 0.3
+        self.preconditions_flexibility += (war_exhaustion * 0.03 + international_pressure * 0.02)
+        self.preconditions_flexibility = np.clip(self.preconditions_flexibility, 0.1, 0.6)
+        
+        self.military_position *= (1 - war_exhaustion * 0.01)
 
-class ForeignActor(Agent):
+class UkrainianGovernment(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.pressure_level = np.random.uniform(0.3, 0.6)
-        self.intervention_willingness = np.random.uniform(0.05, 0.2)
-        self.escalation_threshold = np.random.uniform(0.6, 0.8)
+        self.territorial_integrity_stance = 0.95
+        self.willingness_to_negotiate = 0.60
+        self.western_support_level = 0.75
+        self.humanitarian_pressure = 0.70
         
     def step(self):
-        regime = [agent for agent in self.model.schedule.agents if isinstance(agent, MaduroRegime)][0]
+        war_exhaustion = self.model.war_exhaustion_factor
+        western_backing = self.model.western_support_strength
         
-        if self.model.us_military_tensions > 0.5:
-            self.pressure_level += np.random.uniform(0.05, 0.15)
-            self.intervention_willingness += np.random.uniform(0.02, 0.08)
+        self.western_support_level = 0.5 + western_backing * 0.5
         
-        if regime.control_strength < 0.4:
-            self.intervention_willingness += np.random.uniform(0.03, 0.1)
+        if self.humanitarian_pressure > 0.8:
+            self.territorial_integrity_stance = max(0.70, self.territorial_integrity_stance - 0.03)
         
-        if self.pressure_level > self.escalation_threshold:
-            self.intervention_willingness += np.random.uniform(0.05, 0.12)
+        self.willingness_to_negotiate = 0.5 + war_exhaustion * 0.3 + self.humanitarian_pressure * 0.2
+        self.willingness_to_negotiate = np.clip(self.willingness_to_negotiate, 0.4, 0.9)
         
-        self.pressure_level = max(0.0, min(1.0, self.pressure_level))
-        self.intervention_willingness = max(0.0, min(1.0, self.intervention_willingness))
+        self.humanitarian_pressure += war_exhaustion * 0.05
+        self.humanitarian_pressure = np.clip(self.humanitarian_pressure, 0.5, 1.0)
 
-class DomesticOpposition(Agent):
+class InternationalMediators(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.opposition_strength = np.random.uniform(0.15, 0.35)
-        self.mobilization_capacity = np.random.uniform(0.1, 0.25)
-        self.international_support = np.random.uniform(0.2, 0.4)
+        self.mediation_effectiveness = 0.40
+        self.trust_building = 0.30
+        self.pressure_capacity = 0.50
         
     def step(self):
-        regime = [agent for agent in self.model.schedule.agents if isinstance(agent, MaduroRegime)][0]
-        foreign_support = np.mean([agent.pressure_level for agent in self.model.schedule.agents if isinstance(agent, ForeignActor)])
+        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussianGovernment)]
+        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkrainianGovernment)]
         
-        self.international_support = foreign_support * 0.6 + self.international_support * 0.4
-        
-        if regime.repression_capacity > 0.7:
-            self.opposition_strength -= np.random.uniform(0.03, 0.08)
-            self.mobilization_capacity -= np.random.uniform(0.02, 0.06)
-        else:
-            self.opposition_strength += np.random.uniform(0.02, 0.07)
-            self.mobilization_capacity += np.random.uniform(0.01, 0.05)
-        
-        if self.international_support > 0.5:
-            self.opposition_strength += np.random.uniform(0.02, 0.06)
-        
-        self.opposition_strength = max(0.0, min(1.0, self.opposition_strength))
-        self.mobilization_capacity = max(0.0, min(1.0, self.mobilization_capacity))
+        if russia_agents and ukraine_agents:
+            russia = russia_agents[0]
+            ukraine = ukraine_agents[0]
+            
+            negotiation_gap = abs(russia.willingness_to_negotiate - ukraine.willingness_to_negotiate)
+            
+            if negotiation_gap < 0.3:
+                self.trust_building = min(0.7, self.trust_building + 0.05)
+                self.mediation_effectiveness = min(0.7, self.mediation_effectiveness + 0.04)
+            else:
+                self.trust_building = max(0.2, self.trust_building - 0.02)
+            
+            if russia.willingness_to_negotiate < 0.3:
+                self.model.international_pressure = min(0.8, self.model.international_pressure + 0.03)
 
-class MilitaryElite(Agent):
+class WarfareConditions(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.regime_loyalty = np.random.uniform(0.65, 0.85)
-        self.defection_risk = np.random.uniform(0.05, 0.15)
-        self.self_interest = np.random.uniform(0.6, 0.9)
+        self.military_stalemate_level = 0.75
+        self.civilian_impact = 0.80
+        self.battlefield_momentum = 0.50
         
     def step(self):
-        regime = [agent for agent in self.model.schedule.agents if isinstance(agent, MaduroRegime)][0]
-        foreign_intervention = np.mean([agent.intervention_willingness for agent in self.model.schedule.agents if isinstance(agent, ForeignActor)])
-        domestic_pressure = np.mean([agent.opposition_strength for agent in self.model.schedule.agents if isinstance(agent, DomesticOpposition)])
+        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussianGovernment)]
+        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkrainianGovernment)]
         
-        if regime.control_strength < 0.4 or foreign_intervention > 0.5:
-            self.defection_risk += np.random.uniform(0.05, 0.15)
-            self.regime_loyalty -= np.random.uniform(0.05, 0.12)
-        
-        if domestic_pressure > 0.4:
-            self.defection_risk += np.random.uniform(0.02, 0.07)
-        
-        if regime.elite_loyalty < 0.5:
-            self.defection_risk += np.random.uniform(0.08, 0.18)
-        
-        self.regime_loyalty = max(0.0, min(1.0, self.regime_loyalty))
-        self.defection_risk = max(0.0, min(1.0, self.defection_risk))
+        if russia_agents and ukraine_agents:
+            russia = russia_agents[0]
+            ukraine = ukraine_agents[0]
+            
+            if self.military_stalemate_level > 0.7:
+                self.model.war_exhaustion_factor = min(0.9, self.model.war_exhaustion_factor + 0.02)
+            
+            self.civilian_impact += 0.01
+            self.civilian_impact = np.clip(self.civilian_impact, 0.7, 1.0)
+            
+            if ukraine.western_support_level < 0.5:
+                self.battlefield_momentum = max(0.3, self.battlefield_momentum - 0.03)
+            else:
+                self.battlefield_momentum = min(0.7, self.battlefield_momentum + 0.02)
 
 def compute_outcome(model):
-    regime_agents = [agent for agent in model.schedule.agents if isinstance(agent, MaduroRegime)]
-    foreign_agents = [agent for agent in model.schedule.agents if isinstance(agent, ForeignActor)]
-    opposition_agents = [agent for agent in model.schedule.agents if isinstance(agent, DomesticOpposition)]
-    military_agents = [agent for agent in model.schedule.agents if isinstance(agent, MilitaryElite)]
+    russia_agents = [a for a in model.schedule.agents if isinstance(a, RussianGovernment)]
+    ukraine_agents = [a for a in model.schedule.agents if isinstance(a, UkrainianGovernment)]
+    mediator_agents = [a for a in model.schedule.agents if isinstance(a, InternationalMediators)]
+    warfare_agents = [a for a in model.schedule.agents if isinstance(a, WarfareConditions)]
     
-    if not regime_agents:
-        return 0.5
+    if not (russia_agents and ukraine_agents and mediator_agents and warfare_agents):
+        return 0.14
     
-    regime = regime_agents[0]
+    russia = russia_agents[0]
+    ukraine = ukraine_agents[0]
+    mediators = mediator_agents[0]
+    warfare = warfare_agents[0]
     
-    avg_foreign_intervention = np.mean([agent.intervention_willingness for agent in foreign_agents]) if foreign_agents else 0.0
-    avg_opposition_strength = np.mean([agent.opposition_strength for agent in opposition_agents]) if opposition_agents else 0.0
-    avg_military_defection = np.mean([agent.defection_risk for agent in military_agents]) if military_agents else 0.0
+    russia_readiness = (russia.willingness_to_negotiate * 0.4 + 
+                       russia.preconditions_flexibility * 0.6)
     
-    regime_weakness = 1.0 - regime.control_strength
-    elite_disloyalty = 1.0 - regime.elite_loyalty
+    ukraine_readiness = (ukraine.willingness_to_negotiate * 0.5 + 
+                        (1 - ukraine.territorial_integrity_stance) * 0.3 +
+                        ukraine.humanitarian_pressure * 0.2)
     
-    removal_probability = (
-        avg_foreign_intervention * 0.40 +
-        avg_military_defection * 0.30 +
-        regime_weakness * 0.15 +
-        avg_opposition_strength * 0.10 +
-        elite_disloyalty * 0.05
+    negotiation_alignment = 1.0 - abs(russia_readiness - ukraine_readiness)
+    
+    mediation_factor = (mediators.mediation_effectiveness * 0.5 + 
+                       mediators.trust_building * 0.5)
+    
+    stalemate_pressure = (warfare.military_stalemate_level * 0.4 + 
+                         warfare.civilian_impact * 0.3 +
+                         model.war_exhaustion_factor * 0.3)
+    
+    territorial_compromise_gap = russia.territorial_control * ukraine.territorial_integrity_stance
+    territorial_barrier = np.exp(-territorial_compromise_gap * 2)
+    
+    western_support_barrier = ukraine.western_support_level * 0.3
+    
+    ceasefire_probability = (
+        russia_readiness * 0.20 +
+        ukraine_readiness * 0.20 +
+        negotiation_alignment * 0.15 +
+        mediation_factor * 0.15 +
+        stalemate_pressure * 0.15 +
+        territorial_barrier * 0.10 +
+        (1 - western_support_barrier) * 0.05
     )
     
-    return min(1.0, max(0.0, removal_probability))
+    return np.clip(ceasefire_probability, 0.0, 1.0)
 
 AGENT_CONFIG = {
-    MaduroRegime: 1,
-    ForeignActor: 8,
-    DomesticOpposition: 12,
-    MilitaryElite: 6,
+    RussianGovernment: 1,
+    UkrainianGovernment: 1,
+    InternationalMediators: 3,
+    WarfareConditions: 1,
 }
 
 MODEL_PARAMS = {
-    "us_military_tensions": 0.55,
+    "war_exhaustion_factor": 0.55,
+    "international_pressure": 0.45,
+    "western_support_strength": 0.70,
 }
 
-THRESHOLD = 0.5
+THRESHOLD = 0.50
 # ============== LLM GENERATED CODE END ==============
 
 class SimulationModel(Model):

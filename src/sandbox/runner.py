@@ -33,7 +33,7 @@ def create_sandbox_sync(verbose: bool = True) -> Sandbox:
 
     try:
         sbx = Sandbox.create(
-            template="mesa-mcp-gateway",
+            template="sim-zpicena-gateway",
             timeout=300,  # 5 minutes
             mcp={
                 "perplexityAsk": {

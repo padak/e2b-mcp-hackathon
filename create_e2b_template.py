@@ -9,7 +9,7 @@ from pathlib import Path
 
 # Template configuration
 TEMPLATE_NAME = "mesa-mcp-gateway"
-BASE_TEMPLATE = "base"
+BASE_TEMPLATE = "mcp-gateway"
 
 # Requirements from requirements-e2b.txt
 REQUIREMENTS = """mesa==2.1.5

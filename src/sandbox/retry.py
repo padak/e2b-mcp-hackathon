@@ -33,7 +33,8 @@ def execute_with_retry_sync(
     sbx: Sandbox,
     code: str,
     max_retries: int = 5,
-    fallback_code: Optional[str] = None
+    fallback_code: Optional[str] = None,
+    filename_prefix: str = "simulation"
 ) -> ExecutionResult:
     """
     Execute code in E2B sandbox with retry on error (sync version).
@@ -57,7 +58,7 @@ def execute_with_retry_sync(
 
     for attempt in range(max_retries):
         # Write code to sandbox - use unique filename to avoid permission issues
-        filename = f'/tmp/simulation_{attempt}.py'
+        filename = f'/tmp/{filename_prefix}_{attempt}.py'
         sbx.files.write(filename, current_code)
 
         # Execute - catch exception on non-zero exit
@@ -209,7 +210,7 @@ def execute_monte_carlo_sync(
         )
 
         # Run calibration
-        cal_result = execute_with_retry_sync(sbx, calibration_code, max_retries=3, fallback_code=None)
+        cal_result = execute_with_retry_sync(sbx, calibration_code, max_retries=3, fallback_code=None, filename_prefix="calibration")
 
         if cal_result.success:
             try:

@@ -5,6 +5,7 @@ Prompts for LLM model generation with template-based approach.
 # Fixed template - LLM only fills in the marked sections
 MODEL_TEMPLATE = '''import random
 import json
+import numpy as np
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
