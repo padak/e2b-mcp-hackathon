@@ -12,6 +12,8 @@ Started as n8n → E2B workflow migration tool. OAuth hell killed that in 2 hour
 
 ## How It Works
 
+📐 [View detailed architecture](docs/ARCHITECTURE.md)
+
 ```
 ┌─────────────────────────── ALL IN E2B SANDBOX ───────────────────────────┐
 │                                                                          │
@@ -69,7 +71,9 @@ class InternationalMediatorAgent:
 
 **Result**: Simulation **+26.5pp** more optimistic than Polymarket crowd
 
-📊 [View interactive result](results/20251121_214251/result.html) | 🐍 [View generated model](results/20251121_214251/model.py)
+![Simulation Results](results/20251122_020327/visuals.png)
+
+🐍 [View generated model](results/20251122_020327/model.py)
 
 ## Why This Matters
 
@@ -114,6 +118,9 @@ python src/cli.py
 > **Note:** You need an E2B template with MCP gateway pre-installed.
 
 ## Future Extensions
+- **Polymarket bidding**: Automatically place bets on Polymarket based on simulation results
+- **Model auto-calibration**: Train and calibrate models on resolved Polymarket questions to improve accuracy
+- **General news simulation**: Run simulations on any news story, not just Polymarket questions
 - **NPC tuner**: same stack for game AI (NPC) behavior optimization
 - **Benchmark builder**: build benchmarks using AI generated code plus static data
 - **Code evolution, arena**: Let Claude Agent optimize code and then let various versions compete against each other in sandboxes
