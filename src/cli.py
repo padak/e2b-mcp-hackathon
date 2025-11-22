@@ -85,18 +85,6 @@ async def run_simulation(market: dict) -> None:
         loop = asyncio.get_event_loop()
 
         try:
-            # Install dependencies from requirements-e2b.txt
-            progress.update(task, description="Installing dependencies...")
-            req_path = os.path.join(os.path.dirname(__file__), '..', 'requirements-e2b.txt')
-            with open(req_path, 'r') as f:
-                req_content = f.read()
-            await loop.run_in_executor(
-                None, lambda: sbx.files.write('/tmp/requirements.txt', req_content)
-            )
-            await loop.run_in_executor(
-                None, lambda: sbx.commands.run('pip install -r /tmp/requirements.txt', timeout=180)
-            )
-
             # Research
             progress.update(task, description="Researching with Perplexity...")
             research_query = f"""
