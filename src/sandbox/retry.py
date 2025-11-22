@@ -155,7 +155,9 @@ def execute_monte_carlo_sync(
     code: str,
     n_runs: int = 200,
     max_retries: int = 5,
-    fallback_code: Optional[str] = None
+    fallback_code: Optional[str] = None,
+    auto_calibrate: bool = True,
+    n_calibration: int = 50
 ) -> ExecutionResult:
     """
     Execute Monte Carlo simulation with retry loop (sync version).
@@ -169,12 +171,68 @@ def execute_monte_carlo_sync(
         n_runs: Number of Monte Carlo runs (for fallback only)
         max_retries: Maximum retry attempts
         fallback_code: Fallback code if all retries fail
+        auto_calibrate: Whether to auto-calibrate threshold
+        n_calibration: Number of calibration runs
 
     Returns:
         ExecutionResult with aggregated probability
     """
-    # Execute the generated code directly (it already has run_monte_carlo)
-    result = execute_with_retry_sync(sbx, code, max_retries, fallback_code)
+    import re
+    import json as json_module
+
+    current_code = code
+
+    # Auto-calibrate threshold if enabled
+    if auto_calibrate:
+        logger.info(f"Running calibration with {n_calibration} runs...")
+
+        # Create calibration code - replaces the main block to output calibration data
+        calibration_code = re.sub(
+            r'if __name__ == "__main__":\s*\n\s*results = run_monte_carlo\([^)]+\)\s*\n\s*print\(json\.dumps\(results\)\)',
+            f'''if __name__ == "__main__":
+    import numpy as np
+    outcomes = []
+    for seed in range({n_calibration}):
+        model = SimulationModel(seed=seed)
+        for _ in range(100):
+            model.step()
+        results = model.get_results()
+        outcomes.append(results["final_outcome"])
+    calibration = {{
+        "min": float(min(outcomes)),
+        "max": float(max(outcomes)),
+        "mean": float(np.mean(outcomes)),
+        "std": float(np.std(outcomes))
+    }}
+    print(json.dumps(calibration))''',
+            code
+        )
+
+        # Run calibration
+        cal_result = execute_with_retry_sync(sbx, calibration_code, max_retries=3, fallback_code=None)
+
+        if cal_result.success:
+            try:
+                output_lines = cal_result.output.strip().split('\n')
+                cal_data = json_module.loads(output_lines[-1])
+                calibrated_threshold = cal_data["mean"]
+                logger.info(f"Calibration: min={cal_data['min']:.3f}, max={cal_data['max']:.3f}, "
+                           f"mean={cal_data['mean']:.3f}, std={cal_data['std']:.3f}")
+                logger.info(f"Using calibrated threshold: {calibrated_threshold:.3f}")
+
+                # Update threshold in code
+                current_code = re.sub(
+                    r'THRESHOLD\s*=\s*[\d.]+',
+                    f'THRESHOLD = {calibrated_threshold}',
+                    code
+                )
+            except Exception as e:
+                logger.warning(f"Calibration parsing failed: {e}, using original threshold")
+        else:
+            logger.warning(f"Calibration failed: {cal_result.error}, using original threshold")
+
+    # Execute the generated code (with calibrated threshold if successful)
+    result = execute_with_retry_sync(sbx, current_code, max_retries, fallback_code)
 
     if result.success:
         # Parse the JSON output
@@ -200,10 +258,14 @@ async def execute_monte_carlo(
     code: str,
     n_runs: int = 200,
     max_retries: int = 5,
-    fallback_code: Optional[str] = None
+    fallback_code: Optional[str] = None,
+    auto_calibrate: bool = True,
+    n_calibration: int = 50
 ) -> ExecutionResult:
     """Async wrapper for execute_monte_carlo_sync."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
-        None, execute_monte_carlo_sync, sbx, code, n_runs, max_retries, fallback_code
+        None, lambda: execute_monte_carlo_sync(
+            sbx, code, n_runs, max_retries, fallback_code, auto_calibrate, n_calibration
+        )
     )
