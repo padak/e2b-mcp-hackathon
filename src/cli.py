@@ -8,6 +8,8 @@ Compare prediction market odds with AI-powered Monte Carlo simulations.
 import asyncio
 import sys
 import os
+from datetime import datetime
+from pathlib import Path
 
 # Add src to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -143,21 +145,23 @@ async def run_simulation(market: dict) -> None:
             }
             html = create_chart(simulation_data, yes_odds, question)
 
-            # Serve from sandbox
-            progress.update(task, description="Starting web server...")
-            await loop.run_in_executor(
-                None, lambda: sbx.files.write('/tmp/result.html', html)
-            )
-            await loop.run_in_executor(
-                None, lambda: sbx.commands.run(
-                    'python -m http.server 8080 -d /tmp',
-                    background=True
-                )
-            )
-            # Wait for server to start
-            await asyncio.sleep(2)
-            host = sbx.get_host(8080)
-            url = f"https://{host}/result.html"
+            # Save results locally
+            progress.update(task, description="Saving results...")
+            session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            results_dir = Path(__file__).parent.parent / "results" / session_id
+            results_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save HTML chart
+            html_path = results_dir / "result.html"
+            html_path.write_text(html)
+
+            # Copy generated model
+            model_path = results_dir / "model.py"
+            debug_model_path = Path(__file__).parent.parent / "debug_model.py"
+            if debug_model_path.exists():
+                model_path.write_text(debug_model_path.read_text())
+
+            url = f"file://{html_path.absolute()}"
 
         except Exception as e:
             console.print(f"\n[red]Error:[/red] {e}")
@@ -178,9 +182,8 @@ async def run_simulation(market: dict) -> None:
     )
     console.print(results_panel)
 
-    console.print(f"\n[bold green]View chart:[/bold green] {url}")
-    console.print("\n[dim]Press Enter to close sandbox and exit...[/dim]")
-    input()
+    console.print(f"\n[bold green]Results saved to:[/bold green] {results_dir}")
+    console.print(f"[bold green]View chart:[/bold green] {url}")
 
     sbx.kill()
 

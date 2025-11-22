@@ -3,8 +3,7 @@ Prompts for LLM model generation with template-based approach.
 """
 
 # Fixed template - LLM only fills in the marked sections
-MODEL_TEMPLATE = '''import random
-import json
+MODEL_TEMPLATE = '''import json
 import numpy as np
 from mesa import Agent, Model
 from mesa.time import RandomActivation
@@ -19,7 +18,7 @@ class SimulationModel(Model):
         super().__init__()
 
         if seed is not None:
-            random.seed(seed)
+            np.random.seed(seed)
 
         # Initialize model state
         for key, value in MODEL_PARAMS.items():

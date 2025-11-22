@@ -10,11 +10,15 @@ load_dotenv()
 
 # Setup logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
     datefmt='%H:%M:%S'
 )
 logger = logging.getLogger('e2b-runner')
+
+# Silence noisy HTTP loggers
+for noisy_logger in ['httpcore', 'httpx', 'httpcore.connection', 'httpcore.http11', 'e2b.api', 'e2b.api.client_sync', 'mcp.client.streamable_http', 'anthropic._base_client']:
+    logging.getLogger(noisy_logger).setLevel(logging.CRITICAL)
 
 
 def create_sandbox_sync(verbose: bool = True) -> Sandbox:

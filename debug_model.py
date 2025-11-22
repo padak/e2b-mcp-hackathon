@@ -1,4 +1,3 @@
-import random
 import json
 import numpy as np
 from mesa import Agent, Model
@@ -6,169 +5,173 @@ from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
 # ============== LLM GENERATED CODE START ==============
-from mesa import Agent, Model
-from mesa.time import RandomActivation
-from mesa.datacollection import DataCollector
-import numpy as np
-
-class RussianGovernment(Agent):
+# Agent classes
+class UkraineAgent(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.territorial_control = 0.85
-        self.willingness_to_negotiate = 0.25
-        self.military_position = 0.70
-        self.preconditions_flexibility = 0.15
+        self.ceasefire_willingness = 0.2
+        self.territorial_demands = 0.9
+        self.trust_in_russia = 0.1
+        self.western_support = np.random.uniform(0.7, 0.9)
         
     def step(self):
-        war_exhaustion = self.model.war_exhaustion_factor
-        international_pressure = self.model.international_pressure
+        battlefield_pressure = self.model.russian_military_pressure
+        diplomatic_pressure = self.model.international_mediation
         
-        if self.military_position > 0.6:
-            self.willingness_to_negotiate = max(0.1, self.willingness_to_negotiate - 0.02)
+        if battlefield_pressure > 0.7:
+            self.ceasefire_willingness += 0.05
+        if self.western_support > 0.7:
+            self.ceasefire_willingness -= 0.02
+            self.territorial_demands = min(1.0, self.territorial_demands + 0.01)
+        
+        if diplomatic_pressure > 0.6:
+            self.ceasefire_willingness += 0.03
+            
+        if self.model.russia_offers_full_ceasefire:
+            self.ceasefire_willingness += 0.1
+            if self.trust_in_russia > 0.3:
+                self.ceasefire_willingness += 0.1
+        
+        self.ceasefire_willingness = np.clip(self.ceasefire_willingness, 0, 1)
+        self.territorial_demands = np.clip(self.territorial_demands, 0, 1)
+
+
+class RussiaAgent(Agent):
+    def __init__(self, unique_id: int, model):
+        super().__init__(unique_id, model)
+        self.ceasefire_willingness = 0.15
+        self.territorial_demands = 0.95
+        self.sanctions_pressure = np.random.uniform(0.5, 0.8)
+        self.willing_to_offer_full = False
+        
+    def step(self):
+        battlefield_success = self.model.russian_military_pressure
+        economic_pressure = self.sanctions_pressure * self.model.sanctions_intensity
+        
+        if battlefield_success > 0.6:
+            self.ceasefire_willingness -= 0.02
+            self.territorial_demands = min(1.0, self.territorial_demands + 0.01)
         else:
-            self.willingness_to_negotiate = min(0.5, self.willingness_to_negotiate + 0.05)
+            self.ceasefire_willingness += 0.03
+            
+        if economic_pressure > 0.7:
+            self.ceasefire_willingness += 0.05
+            self.willing_to_offer_full = np.random.random() < 0.15
         
-        self.preconditions_flexibility += (war_exhaustion * 0.03 + international_pressure * 0.02)
-        self.preconditions_flexibility = np.clip(self.preconditions_flexibility, 0.1, 0.6)
+        if self.model.western_arms_flow < 0.3:
+            self.ceasefire_willingness += 0.08
+            self.willing_to_offer_full = np.random.random() < 0.25
         
-        self.military_position *= (1 - war_exhaustion * 0.01)
+        self.model.russia_offers_full_ceasefire = self.willing_to_offer_full
+        self.ceasefire_willingness = np.clip(self.ceasefire_willingness, 0, 1)
 
-class UkrainianGovernment(Agent):
+
+class WesternMediatorAgent(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.territorial_integrity_stance = 0.95
-        self.willingness_to_negotiate = 0.60
-        self.western_support_level = 0.75
-        self.humanitarian_pressure = 0.70
+        self.mediation_intensity = np.random.uniform(0.4, 0.7)
+        self.arms_support = np.random.uniform(0.7, 0.9)
+        self.sanctions_enforcement = np.random.uniform(0.6, 0.9)
         
     def step(self):
-        war_exhaustion = self.model.war_exhaustion_factor
-        western_backing = self.model.western_support_strength
+        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkraineAgent)]
+        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussiaAgent)]
         
-        self.western_support_level = 0.5 + western_backing * 0.5
-        
-        if self.humanitarian_pressure > 0.8:
-            self.territorial_integrity_stance = max(0.70, self.territorial_integrity_stance - 0.03)
-        
-        self.willingness_to_negotiate = 0.5 + war_exhaustion * 0.3 + self.humanitarian_pressure * 0.2
-        self.willingness_to_negotiate = np.clip(self.willingness_to_negotiate, 0.4, 0.9)
-        
-        self.humanitarian_pressure += war_exhaustion * 0.05
-        self.humanitarian_pressure = np.clip(self.humanitarian_pressure, 0.5, 1.0)
-
-class InternationalMediators(Agent):
-    def __init__(self, unique_id: int, model):
-        super().__init__(unique_id, model)
-        self.mediation_effectiveness = 0.40
-        self.trust_building = 0.30
-        self.pressure_capacity = 0.50
-        
-    def step(self):
-        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussianGovernment)]
-        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkrainianGovernment)]
-        
-        if russia_agents and ukraine_agents:
-            russia = russia_agents[0]
-            ukraine = ukraine_agents[0]
+        if ukraine_agents and russia_agents:
+            avg_ukraine_will = np.mean([a.ceasefire_willingness for a in ukraine_agents])
+            avg_russia_will = np.mean([a.ceasefire_willingness for a in russia_agents])
             
-            negotiation_gap = abs(russia.willingness_to_negotiate - ukraine.willingness_to_negotiate)
-            
-            if negotiation_gap < 0.3:
-                self.trust_building = min(0.7, self.trust_building + 0.05)
-                self.mediation_effectiveness = min(0.7, self.mediation_effectiveness + 0.04)
+            if avg_ukraine_will > 0.4 and avg_russia_will > 0.4:
+                self.mediation_intensity = min(1.0, self.mediation_intensity + 0.1)
             else:
-                self.trust_building = max(0.2, self.trust_building - 0.02)
+                self.mediation_intensity = max(0.2, self.mediation_intensity - 0.02)
             
-            if russia.willingness_to_negotiate < 0.3:
-                self.model.international_pressure = min(0.8, self.model.international_pressure + 0.03)
+            if avg_ukraine_will < 0.3:
+                self.arms_support = min(1.0, self.arms_support + 0.05)
+            
+            if avg_russia_will < 0.2:
+                self.sanctions_enforcement = min(1.0, self.sanctions_enforcement + 0.05)
+        
+        self.model.international_mediation = self.mediation_intensity
+        self.model.western_arms_flow = self.arms_support
+        self.model.sanctions_intensity = self.sanctions_enforcement
 
-class WarfareConditions(Agent):
+
+class DomesticPressureAgent(Agent):
     def __init__(self, unique_id: int, model):
         super().__init__(unique_id, model)
-        self.military_stalemate_level = 0.75
-        self.civilian_impact = 0.80
-        self.battlefield_momentum = 0.50
+        self.russia_domestic_pressure = np.random.uniform(0.3, 0.6)
+        self.ukraine_domestic_pressure = np.random.uniform(0.4, 0.7)
         
     def step(self):
-        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussianGovernment)]
-        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkrainianGovernment)]
+        if self.model.russian_military_pressure < 0.4:
+            self.russia_domestic_pressure += 0.05
         
-        if russia_agents and ukraine_agents:
-            russia = russia_agents[0]
-            ukraine = ukraine_agents[0]
-            
-            if self.military_stalemate_level > 0.7:
-                self.model.war_exhaustion_factor = min(0.9, self.model.war_exhaustion_factor + 0.02)
-            
-            self.civilian_impact += 0.01
-            self.civilian_impact = np.clip(self.civilian_impact, 0.7, 1.0)
-            
-            if ukraine.western_support_level < 0.5:
-                self.battlefield_momentum = max(0.3, self.battlefield_momentum - 0.03)
-            else:
-                self.battlefield_momentum = min(0.7, self.battlefield_momentum + 0.02)
+        time_factor = self.model.schedule.steps / 365.0
+        self.ukraine_domestic_pressure += time_factor * 0.01
+        
+        russia_agents = [a for a in self.model.schedule.agents if isinstance(a, RussiaAgent)]
+        ukraine_agents = [a for a in self.model.schedule.agents if isinstance(a, UkraineAgent)]
+        
+        if russia_agents:
+            for agent in russia_agents:
+                agent.ceasefire_willingness += self.russia_domestic_pressure * 0.02
+        
+        if ukraine_agents:
+            for agent in ukraine_agents:
+                if self.ukraine_domestic_pressure > 0.7:
+                    agent.ceasefire_willingness += 0.03
+        
+        self.russia_domestic_pressure = np.clip(self.russia_domestic_pressure, 0, 1)
+        self.ukraine_domestic_pressure = np.clip(self.ukraine_domestic_pressure, 0, 1)
 
+
+# Outcome computation
 def compute_outcome(model):
-    russia_agents = [a for a in model.schedule.agents if isinstance(a, RussianGovernment)]
-    ukraine_agents = [a for a in model.schedule.agents if isinstance(a, UkrainianGovernment)]
-    mediator_agents = [a for a in model.schedule.agents if isinstance(a, InternationalMediators)]
-    warfare_agents = [a for a in model.schedule.agents if isinstance(a, WarfareConditions)]
+    ukraine_agents = [a for a in model.schedule.agents if isinstance(a, UkraineAgent)]
+    russia_agents = [a for a in model.schedule.agents if isinstance(a, RussiaAgent)]
     
-    if not (russia_agents and ukraine_agents and mediator_agents and warfare_agents):
-        return 0.14
+    if not ukraine_agents or not russia_agents:
+        return 0.0
     
-    russia = russia_agents[0]
-    ukraine = ukraine_agents[0]
-    mediators = mediator_agents[0]
-    warfare = warfare_agents[0]
+    avg_ukraine_will = np.mean([a.ceasefire_willingness for a in ukraine_agents])
+    avg_russia_will = np.mean([a.ceasefire_willingness for a in russia_agents])
+    avg_ukraine_demands = np.mean([a.territorial_demands for a in ukraine_agents])
+    avg_russia_demands = np.mean([a.territorial_demands for a in russia_agents])
     
-    russia_readiness = (russia.willingness_to_negotiate * 0.4 + 
-                       russia.preconditions_flexibility * 0.6)
+    territorial_gap = abs(avg_ukraine_demands - avg_russia_demands)
+    willingness_product = avg_ukraine_will * avg_russia_will
+    mediation_factor = model.international_mediation
     
-    ukraine_readiness = (ukraine.willingness_to_negotiate * 0.5 + 
-                        (1 - ukraine.territorial_integrity_stance) * 0.3 +
-                        ukraine.humanitarian_pressure * 0.2)
+    russia_offers_full = model.russia_offers_full_ceasefire
     
-    negotiation_alignment = 1.0 - abs(russia_readiness - ukraine_readiness)
+    base_probability = willingness_product * 0.4
+    mediation_boost = mediation_factor * 0.2
+    territorial_penalty = territorial_gap * 0.3
+    russia_full_offer_boost = 0.15 if russia_offers_full else 0.0
     
-    mediation_factor = (mediators.mediation_effectiveness * 0.5 + 
-                       mediators.trust_building * 0.5)
+    outcome = base_probability + mediation_boost - territorial_penalty + russia_full_offer_boost
     
-    stalemate_pressure = (warfare.military_stalemate_level * 0.4 + 
-                         warfare.civilian_impact * 0.3 +
-                         model.war_exhaustion_factor * 0.3)
-    
-    territorial_compromise_gap = russia.territorial_control * ukraine.territorial_integrity_stance
-    territorial_barrier = np.exp(-territorial_compromise_gap * 2)
-    
-    western_support_barrier = ukraine.western_support_level * 0.3
-    
-    ceasefire_probability = (
-        russia_readiness * 0.20 +
-        ukraine_readiness * 0.20 +
-        negotiation_alignment * 0.15 +
-        mediation_factor * 0.15 +
-        stalemate_pressure * 0.15 +
-        territorial_barrier * 0.10 +
-        (1 - western_support_barrier) * 0.05
-    )
-    
-    return np.clip(ceasefire_probability, 0.0, 1.0)
+    return np.clip(outcome, 0, 1)
 
+
+# Configuration
 AGENT_CONFIG = {
-    RussianGovernment: 1,
-    UkrainianGovernment: 1,
-    InternationalMediators: 3,
-    WarfareConditions: 1,
+    UkraineAgent: 8,
+    RussiaAgent: 8,
+    WesternMediatorAgent: 6,
+    DomesticPressureAgent: 4,
 }
 
 MODEL_PARAMS = {
-    "war_exhaustion_factor": 0.55,
-    "international_pressure": 0.45,
-    "western_support_strength": 0.70,
+    "russian_military_pressure": 0.6,
+    "international_mediation": 0.5,
+    "western_arms_flow": 0.8,
+    "sanctions_intensity": 0.7,
+    "russia_offers_full_ceasefire": False,
 }
 
-THRESHOLD = 0.50
+THRESHOLD = 0.5
 # ============== LLM GENERATED CODE END ==============
 
 class SimulationModel(Model):
@@ -176,7 +179,7 @@ class SimulationModel(Model):
         super().__init__()
 
         if seed is not None:
-            random.seed(seed)
+            np.random.seed(seed)
 
         # Initialize model state
         for key, value in MODEL_PARAMS.items():
