@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MarketCardSkeleton } from "@/components/Skeleton";
 
@@ -33,7 +33,7 @@ export default function BrowsePage() {
   const [sort, setSort] = useState("volume");
   const [total, setTotal] = useState(0);
 
-  const fetchMarkets = async () => {
+  const fetchMarkets = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -44,23 +44,27 @@ export default function BrowsePage() {
       });
       const res = await fetch(`/api/markets?${params}`);
       const data = await res.json();
-      setMarkets(data.markets);
-      setTotal(data.total);
+      setMarkets(data.markets || []);
+      setTotal(data.total || 0);
     } catch (error) {
       console.error("Failed to fetch markets:", error);
+      setMarkets([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, search, sort]);
 
   useEffect(() => {
     fetchMarkets();
-  }, [category, sort]);
+  }, [fetchMarkets]);
 
   useEffect(() => {
-    const timeout = setTimeout(fetchMarkets, 300);
+    const timeout = setTimeout(() => {
+      fetchMarkets();
+    }, 300);
     return () => clearTimeout(timeout);
-  }, [search]);
+  }, [search, fetchMarkets]);
 
   const handleSelectMarket = (market: Market) => {
     router.push(`/?url=${encodeURIComponent(market.url)}`);
