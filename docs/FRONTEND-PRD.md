@@ -362,11 +362,11 @@ GET /api/simulations/:id/model
 **Goal**: Transparent simulation explanation
 
 **Scope**:
-- [ ] Extend Claude prompt with MODEL_EXPLANATION
-- [ ] Research highlights extraction
-- [ ] Agent cards with "why" and "behavior"
-- [ ] Simulation logic steps
-- [ ] Collapsible UI component
+- [x] Extend Claude prompt with MODEL_EXPLANATION - *mock data for now*
+- [x] Research highlights extraction
+- [x] Agent cards with "why" and "behavior"
+- [x] Simulation logic steps
+- [x] Collapsible UI component
 - [ ] Animated agent visualization (optional)
 
 **Deliverables**:

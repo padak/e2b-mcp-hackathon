@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { SimulationStatus, LogEntry } from "@/types";
+import { SimulationStatus, LogEntry, ModelExplanation } from "@/types";
+import ModelExplainer from "@/components/ModelExplainer";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
@@ -294,6 +295,11 @@ export default function SimulationPage() {
                 </div>
               )}
             </div>
+
+            {/* Model Explainer */}
+            {result.model_explanation && (
+              <ModelExplainer explanation={result.model_explanation as ModelExplanation} />
+            )}
 
             {/* Actions */}
             <div className="flex gap-4">

@@ -35,9 +35,24 @@ export interface SimulationResult {
   signal: 'BUY_YES' | 'BUY_NO' | 'HOLD';
   expected_value?: number;
   outcomes?: number[];
+  model_explanation?: ModelExplanation;
 }
 
 export interface LogEntry {
   timestamp: string;
   message: string;
+}
+
+export interface AgentDefinition {
+  count: number;
+  why: string;
+  behavior: string;
+  initial_state: string;
+}
+
+export interface ModelExplanation {
+  research_highlights: string[];
+  agents: Record<string, AgentDefinition>;
+  simulation_logic: string[];
+  outcome_interpretation: string;
 }

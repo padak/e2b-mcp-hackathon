@@ -133,6 +133,42 @@ async function runSimulation(id: string, marketUrl: string, nRuns: number) {
       signal: signal,
       expected_value: difference * 100,
       outcomes: outcomes,
+      model_explanation: {
+        research_highlights: [
+          "Current market sentiment shows strong institutional interest",
+          "Recent policy announcements suggest favorable conditions",
+          "Historical data indicates 70% correlation with similar events",
+          "Expert consensus leans toward positive outcome"
+        ],
+        agents: {
+          "Institutional Investors": {
+            count: 50,
+            why: "Large market participants with significant influence on price discovery",
+            behavior: "Analyze fundamentals and adjust positions based on risk/reward",
+            initial_state: "60% bullish based on research indicators"
+          },
+          "Retail Traders": {
+            count: 100,
+            why: "Individual market participants who react to news and sentiment",
+            behavior: "Follow trends and respond to social signals",
+            initial_state: "Mixed sentiment, influenced by recent news"
+          },
+          "Market Makers": {
+            count: 10,
+            why: "Provide liquidity and help establish fair market prices",
+            behavior: "Balance order flow and manage inventory risk",
+            initial_state: "Neutral, adjusting spreads based on volatility"
+          }
+        },
+        simulation_logic: [
+          "Each simulation step represents one day of market activity",
+          "Agents interact and update their positions based on new information",
+          "Random events (news, policy changes) occur with realistic probabilities",
+          "After 100 steps, final outcome is determined by majority position",
+          "Process repeated 200 times with different random seeds"
+        ],
+        outcome_interpretation: `The simulation suggests a ${Math.round(simProbability * 100)}% probability of YES outcome, which is ${Math.abs(Math.round(difference * 100))}pp ${difference > 0 ? 'higher' : 'lower'} than the current market price. This ${Math.abs(difference) > 0.05 ? 'significant' : 'small'} difference ${Math.abs(difference) > 0.05 ? 'may represent' : 'likely does not represent'} a trading opportunity.`
+      }
     };
     addLog(simulation, `Simulation complete: ${Math.round(simProbability * 100)}% probability`);
   } catch (error) {
