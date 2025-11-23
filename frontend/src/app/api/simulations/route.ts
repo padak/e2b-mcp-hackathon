@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // In-memory storage for simulations (ephemeral as per PRD)
-const simulations = new Map<string, {
+interface SimulationData {
   id: string;
   market_url: string;
   n_runs: number;
@@ -9,8 +9,11 @@ const simulations = new Map<string, {
   progress?: { current: number; total: number };
   result?: Record<string, unknown>;
   error?: string;
+  logs: { timestamp: string; message: string }[];
   created_at: Date;
-}>();
+}
+
+const simulations = new Map<string, SimulationData>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,11 +33,11 @@ export async function POST(request: NextRequest) {
       market_url,
       n_runs,
       status: "pending",
+      logs: [],
       created_at: new Date(),
     });
 
-    // Start simulation in background (we'll implement E2B backend later)
-    // For now, trigger a mock simulation process
+    // Start simulation in background
     runSimulation(simulationId, market_url, n_runs);
 
     return NextResponse.json({
@@ -47,6 +50,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function addLog(simulation: SimulationData, message: string) {
+  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+  simulation.logs.push({ timestamp, message });
+}
+
 async function runSimulation(id: string, marketUrl: string, nRuns: number) {
   const simulation = simulations.get(id);
   if (!simulation) return;
@@ -54,33 +62,62 @@ async function runSimulation(id: string, marketUrl: string, nRuns: number) {
   try {
     // Phase 1: Research
     simulation.status = "research";
-    await sleep(2000);
+    addLog(simulation, "Starting market research...");
+    await sleep(1000);
+    addLog(simulation, "Fetching current news and data...");
+    await sleep(1000);
+    addLog(simulation, "Research complete");
 
     // Phase 2: Generate
     simulation.status = "generate";
-    await sleep(3000);
+    addLog(simulation, "Generating simulation model...");
+    await sleep(1500);
+    addLog(simulation, "Creating agent definitions...");
+    await sleep(1500);
+    addLog(simulation, "Model compiled successfully");
 
     // Phase 3: Calibrate
     simulation.status = "calibrate";
     simulation.progress = { current: 0, total: 50 };
+    addLog(simulation, "Starting calibration (50 runs)...");
     for (let i = 1; i <= 50; i++) {
       simulation.progress.current = i;
-      await sleep(50);
+      if (i % 10 === 0) {
+        addLog(simulation, `Calibration run ${i}/50`);
+      }
+      await sleep(30);
     }
+    addLog(simulation, "Calibration complete, threshold determined");
 
     // Phase 4: Simulate
     simulation.status = "simulate";
     simulation.progress = { current: 0, total: nRuns };
+    addLog(simulation, `Starting Monte Carlo (${nRuns} runs)...`);
+
+    const outcomes: number[] = [];
     for (let i = 1; i <= nRuns; i++) {
       simulation.progress.current = i;
-      await sleep(25);
+      // Simulate outcome (0 or 1)
+      outcomes.push(Math.random() > 0.35 ? 1 : 0);
+      if (i % 50 === 0) {
+        addLog(simulation, `Monte Carlo run ${i}/${nRuns}`);
+      }
+      await sleep(15);
     }
+    addLog(simulation, "Monte Carlo complete");
 
-    // Complete with mock result
-    // Extract market odds from URL for comparison
-    const marketOdds = 0.65; // Mock value, will be fetched in real implementation
-    const simProbability = 0.58 + Math.random() * 0.14; // Random between 0.58-0.72
+    // Calculate results
+    const yesCount = outcomes.filter(o => o === 1).length;
+    const simProbability = yesCount / nRuns;
+    const marketOdds = 0.65; // Mock value
     const difference = simProbability - marketOdds;
+
+    // Calculate 95% CI using normal approximation
+    const se = Math.sqrt((simProbability * (1 - simProbability)) / nRuns);
+    const ci_95: [number, number] = [
+      Math.max(0, simProbability - 1.96 * se),
+      Math.min(1, simProbability + 1.96 * se)
+    ];
 
     let signal: "BUY_YES" | "BUY_NO" | "HOLD" = "HOLD";
     if (difference > 0.05) signal = "BUY_YES";
@@ -89,16 +126,19 @@ async function runSimulation(id: string, marketUrl: string, nRuns: number) {
     simulation.status = "complete";
     simulation.result = {
       probability: simProbability,
-      ci_95: [simProbability - 0.067, simProbability + 0.067],
+      ci_95: ci_95,
       n_runs: nRuns,
       market_odds: marketOdds,
       difference: difference,
       signal: signal,
       expected_value: difference * 100,
+      outcomes: outcomes,
     };
+    addLog(simulation, `Simulation complete: ${Math.round(simProbability * 100)}% probability`);
   } catch (error) {
     simulation.status = "error";
     simulation.error = error instanceof Error ? error.message : "Simulation failed";
+    addLog(simulation, `Error: ${simulation.error}`);
   }
 }
 

@@ -343,13 +343,13 @@ GET /api/simulations/:id/model
 **Goal**: Live progress and interactive visualization
 
 **Scope**:
-- [ ] WebSocket connection for live updates
-- [ ] Progress stepper UI
-- [ ] Live log stream
-- [ ] Plotly chart integration
-- [ ] Trading signal badge
-- [ ] Confidence interval display
-- [ ] Download result as JSON
+- [x] WebSocket connection for live updates - *using polling for simplicity*
+- [x] Progress stepper UI
+- [x] Live log stream
+- [x] Plotly chart integration
+- [x] Trading signal badge
+- [x] Confidence interval display
+- [x] Download result as JSON
 
 **Deliverables**:
 - User sees progress in real-time

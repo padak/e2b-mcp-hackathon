@@ -34,4 +34,10 @@ export interface SimulationResult {
   difference: number;
   signal: 'BUY_YES' | 'BUY_NO' | 'HOLD';
   expected_value?: number;
+  outcomes?: number[];
+}
+
+export interface LogEntry {
+  timestamp: string;
+  message: string;
 }

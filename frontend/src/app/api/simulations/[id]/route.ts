@@ -19,5 +19,6 @@ export async function GET(
     progress: simulation.progress,
     result: simulation.result,
     error: simulation.error,
+    logs: simulation.logs,
   });
 }
