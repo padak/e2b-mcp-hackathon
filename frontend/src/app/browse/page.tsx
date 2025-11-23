@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MarketCardSkeleton } from "@/components/Skeleton";
 
 interface Market {
   slug: string;
@@ -68,14 +69,9 @@ export default function BrowsePage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold">Browse Markets</h1>
-          <button
-            onClick={() => router.push("/")}
-            className="text-blue-600 hover:underline"
-          >
-            Back to Home
-          </button>
+          <p className="text-gray-600 mt-2">Select a market to run a simulation</p>
         </div>
 
         {/* Filters */}
@@ -126,7 +122,11 @@ export default function BrowsePage() {
         {/* Results */}
         <div className="space-y-4">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading markets...</div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <MarketCardSkeleton key={i} />
+              ))}
+            </div>
           ) : markets.length === 0 ? (
             <div className="text-center py-8 text-gray-500">No markets found</div>
           ) : (
