@@ -380,12 +380,12 @@ GET /api/simulations/:id/model
 **Goal**: Alternative way to select markets
 
 **Scope**:
-- [ ] Category filtering
-- [ ] Search functionality
-- [ ] Top 10 by volume
-- [ ] Market cards/table
-- [ ] Sorting options
-- [ ] Pagination
+- [x] Category filtering
+- [x] Search functionality
+- [x] Top 10 by volume
+- [x] Market cards/table
+- [x] Sorting options
+- [ ] Pagination - *basic limit implemented*
 
 **Deliverables**:
 - Browse markets without knowing URL

@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MarketValidation } from "@/types";
 
-export default function Home() {
+function HomeContent() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validation, setValidation] = useState<MarketValidation | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Pre-fill URL from query params
+  useEffect(() => {
+    const urlParam = searchParams.get("url");
+    if (urlParam) {
+      setUrl(urlParam);
+    }
+  }, [searchParams]);
 
   const handleValidate = async () => {
     if (!url) return;
@@ -145,10 +154,27 @@ export default function Home() {
           )}
         </div>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Simulation takes ~2-3 minutes
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-gray-500 text-sm">Simulation takes ~2-3 minutes</p>
+          <p className="text-sm">
+            or{" "}
+            <button
+              onClick={() => router.push("/browse")}
+              className="text-blue-600 hover:underline"
+            >
+              browse available markets
+            </button>
+          </p>
+        </div>
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
