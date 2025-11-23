@@ -59,7 +59,12 @@ function HomeContent() {
       const res = await fetch("/api/simulations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ market_url: url, n_runs: 200 }),
+        body: JSON.stringify({
+          market_url: url,
+          question: validation.market.question,
+          yes_odds: validation.market.yes_odds,
+          n_runs: 200
+        }),
       });
 
       const data = await res.json();

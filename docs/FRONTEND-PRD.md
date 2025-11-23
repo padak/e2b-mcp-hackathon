@@ -326,8 +326,8 @@ GET /api/simulations/:id/model
 - [x] Next.js project setup
 - [x] Landing page with URL input
 - [x] Market validation endpoint
-- [ ] Backend API wrapper (FastAPI in E2B) - *mock implementation for now*
-- [ ] E2B sandbox orchestration from Vercel - *mock implementation for now*
+- [x] Backend API wrapper (FastAPI in E2B)
+- [x] E2B sandbox orchestration from Vercel
 - [x] Basic simulation trigger
 - [x] Results display (numbers only, no chart)
 - [x] Basic error handling

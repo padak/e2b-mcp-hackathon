@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { forwardToBackend } from "@/lib/e2b";
+
+// Check if we should use E2B backend or mock
+const USE_E2B = process.env.E2B_API_KEY && process.env.NODE_ENV === "production";
 
 // Mock market data for different categories
 const MOCK_MARKETS = [
@@ -40,6 +44,24 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "10");
   const offset = parseInt(searchParams.get("offset") || "0");
 
+  // Use E2B backend in production for real Polymarket data
+  if (USE_E2B) {
+    try {
+      const params = new URLSearchParams({
+        ...(category && { category }),
+        ...(search && { search_query: search }),
+        limit: limit.toString(),
+      });
+      const response = await forwardToBackend(`/markets?${params}`);
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (error) {
+      console.error("E2B backend error:", error);
+      // Fall through to mock data
+    }
+  }
+
+  // Mock implementation
   let markets = [...MOCK_MARKETS];
 
   // Filter by category
