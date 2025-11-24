@@ -65,28 +65,16 @@ export async function getBackendUrl(): Promise<string> {
       throw new Error(`Failed to clone repo: ${cloneResult.stderr}`);
     }
 
-    // Install dependencies
+    // Install dependencies (skip mcp - it's either pre-installed or a dependency)
     console.log("Installing dependencies...");
     try {
-      // Install core packages we need (using pip3)
       const installResult = await backendSandbox.commands.run(
-        "pip3 install fastapi uvicorn e2b-code-interpreter anthropic mcp httpx pydantic 2>&1",
-        { timeoutMs: 180000 }
+        "pip3 install fastapi uvicorn e2b-code-interpreter anthropic httpx pydantic",
+        { timeoutMs: 120000 }
       );
-      console.log("Pip install output:", installResult.stdout?.substring(0, 500));
       console.log("Dependencies installed");
     } catch (pipError) {
       console.error("Pip install failed:", pipError);
-      // Try pip instead of pip3
-      try {
-        await backendSandbox.commands.run(
-          "pip install fastapi uvicorn e2b-code-interpreter anthropic mcp httpx pydantic 2>&1",
-          { timeoutMs: 180000 }
-        );
-        console.log("Dependencies installed with pip");
-      } catch (pip2Error) {
-        console.error("Both pip3 and pip failed:", pip2Error);
-      }
     }
 
     // Create .env file with API keys
