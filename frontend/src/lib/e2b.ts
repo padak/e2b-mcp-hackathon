@@ -90,8 +90,8 @@ PERPLEXITY_API_KEY=${perplexityKey}
 
     // Start the backend server
     console.log("Starting FastAPI backend...");
-    const serverProcess = backendSandbox.commands.run(
-      "cd /home/user/app/src && python -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 2>&1",
+    backendSandbox.commands.run(
+      "cd /home/user/app/src && python3 -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 2>&1",
       { background: true }
     );
 
@@ -101,7 +101,7 @@ PERPLEXITY_API_KEY=${perplexityKey}
     // Try to capture any startup errors
     try {
       const testImport = await backendSandbox.commands.run(
-        "cd /home/user/app/src && python -c 'from backend.api import app; print(\"Import OK\")'",
+        "cd /home/user/app/src && python3 -c 'from backend.api import app; print(\"Import OK\")'",
         { timeoutMs: 10000 }
       );
       console.log("Backend import test:", testImport.stdout);
