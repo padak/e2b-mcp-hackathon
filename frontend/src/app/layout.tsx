@@ -3,11 +3,11 @@ import "./globals.css";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "WorldSim Markets - AI Monte Carlo Simulations for Prediction Markets",
+  title: "PolyFuture - AI Monte Carlo Simulations for Prediction Markets",
   description: "Compare Polymarket odds with AI-powered Monte Carlo simulations. Get data-driven insights for prediction market trading decisions.",
   keywords: ["prediction markets", "polymarket", "monte carlo", "simulation", "AI", "trading signals"],
   openGraph: {
-    title: "WorldSim Markets",
+    title: "PolyFuture",
     description: "AI Monte Carlo simulations for prediction markets",
     type: "website",
   },

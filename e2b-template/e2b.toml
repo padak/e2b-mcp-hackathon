@@ -1,0 +1,15 @@
+# E2B Template Configuration for PolyFuture Backend
+# This template provides Python 3.12 with all required packages pre-installed
+
+# Dockerfile to use for building the template
+dockerfile = "Dockerfile"
+
+# CPU and memory configuration
+cpu_count = 2
+memory_mb = 2048
+
+# MCP Gateway configuration for Perplexity
+[mcp_servers.perplexity]
+command = "npx"
+args = ["-y", "@anthropic/perplexity-mcp"]
+env = ["PERPLEXITY_API_KEY"]

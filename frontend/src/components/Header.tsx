@@ -12,7 +12,7 @@ export default function Header() {
           onClick={() => router.push("/")}
           className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
         >
-          WorldSim Markets
+          PolyFuture
         </button>
         <nav className="flex items-center gap-4">
           <button

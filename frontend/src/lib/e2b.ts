@@ -4,7 +4,7 @@ import { Sandbox } from "@e2b/code-interpreter";
 let backendUrl: string | null = null;
 let backendSandbox: Sandbox | null = null;
 
-const E2B_TEMPLATE = "sim-zpicena-gateway";
+const E2B_TEMPLATE = "polyfuture-dev";
 const BACKEND_PORT = 8000;
 const GITHUB_REPO = "https://github.com/padak/e2b-mcp-hackathon.git";
 
@@ -65,30 +65,8 @@ export async function getBackendUrl(): Promise<string> {
       throw new Error(`Failed to clone repo: ${cloneResult.stderr}`);
     }
 
-    // Install uv and create Python 3.12 venv
-    console.log("Installing dependencies...");
-    try {
-      // Install uv
-      await backendSandbox.commands.run(
-        "curl -LsSf https://astral.sh/uv/install.sh | sh",
-        { timeoutMs: 60000 }
-      );
-
-      // Install Python 3.12 and create venv
-      await backendSandbox.commands.run(
-        "~/.local/bin/uv python install 3.12 && ~/.local/bin/uv venv /home/user/.venv --python 3.12",
-        { timeoutMs: 120000 }
-      );
-
-      // Install all packages including mcp
-      await backendSandbox.commands.run(
-        "~/.local/bin/uv pip install --python /home/user/.venv/bin/python fastapi uvicorn e2b-code-interpreter anthropic httpx pydantic mcp",
-        { timeoutMs: 180000 }
-      );
-      console.log("Dependencies installed");
-    } catch (pipError) {
-      console.error("Pip install failed:", pipError);
-    }
+    // All dependencies are pre-installed in the polyfuture-backend template
+    console.log("Dependencies pre-installed in template");
 
     // Create .env file with API keys
     console.log("Configuring environment...");
@@ -100,7 +78,7 @@ PERPLEXITY_API_KEY=${perplexityKey}
 `;
     await backendSandbox.files.write("/home/user/app/.env", envContent);
 
-    // Start the backend server using .venv Python
+    // Start the backend server using venv Python
     console.log("Starting FastAPI backend...");
     backendSandbox.commands.run(
       "cd /home/user/app/src && /home/user/.venv/bin/python -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 2>&1",
