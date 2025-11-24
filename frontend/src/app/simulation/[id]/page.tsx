@@ -102,26 +102,123 @@ export default function SimulationPage() {
   const isError = simulation.status === "error";
   const result = simulation.result;
 
-  // Prepare chart data
-  const chartData = result?.outcomes ? (() => {
+  // Calculate EV (Expected Value per $100 bet)
+  const calculateEV = () => {
+    if (!result) return null;
+    const prob = result.probability;
+    const marketOdds = result.market_odds;
+
+    // EV for betting YES
+    const evYes = (prob * (100 / marketOdds)) - 100;
+    // EV for betting NO
+    const evNo = ((1 - prob) * (100 / (1 - marketOdds))) - 100;
+
+    return {
+      yes: Math.round(evYes),
+      no: Math.round(evNo),
+      recommended: evYes > evNo ? "YES" : "NO",
+      value: Math.round(Math.max(evYes, evNo)),
+    };
+  };
+
+  const ev = calculateEV();
+
+  // Prepare bar chart data with market odds line
+  const barChartData = result?.outcomes ? (() => {
     const outcomes = result.outcomes as number[];
     const yesCount = outcomes.filter(o => o === 1).length;
     const noCount = outcomes.length - yesCount;
+    const total = outcomes.length;
+    const yesPercent = Math.round((yesCount / total) * 100);
+    const noPercent = 100 - yesPercent;
+
     return [
       {
         type: "bar" as const,
-        x: ["YES", "NO"],
-        y: [yesCount, noCount],
+        x: ["No", "Yes"],
+        y: [noCount, yesCount],
+        text: [`${noPercent}%`, `${yesPercent}%`],
+        textposition: "inside" as const,
+        textfont: { color: "white", size: 14 },
         marker: {
-          color: ["#22c55e", "#ef4444"],
+          color: ["#ef4444", "#22c55e"],
         },
+        name: "Results",
       },
     ];
   })() : [];
 
+  // Market odds reference line for bar chart
+  const marketOddsLine = result ? {
+    type: "scatter" as const,
+    x: ["No", "Yes"],
+    y: [result.n_runs * (1 - result.market_odds), result.n_runs * result.market_odds],
+    mode: "lines" as const,
+    line: { color: "#3b82f6", width: 2, dash: "dash" as const },
+    name: "Market Odds",
+  } : null;
+
+  // Prepare convergence chart data
+  const convergenceData = result?.outcomes ? (() => {
+    const outcomes = result.outcomes as number[];
+    const runningProb: number[] = [];
+    const runningCI: number[] = [];
+    let sum = 0;
+
+    for (let i = 0; i < outcomes.length; i++) {
+      sum += outcomes[i];
+      const p = sum / (i + 1);
+      runningProb.push(p * 100);
+      // 95% CI using normal approximation
+      const ci = 1.96 * Math.sqrt((p * (1 - p)) / (i + 1)) * 100;
+      runningCI.push(ci);
+    }
+
+    const runs = Array.from({ length: outcomes.length }, (_, i) => i + 1);
+
+    return {
+      probability: {
+        type: "scatter" as const,
+        x: runs,
+        y: runningProb,
+        mode: "lines" as const,
+        line: { color: "#22c55e", width: 2 },
+        name: "Probability",
+      },
+      upperBound: {
+        type: "scatter" as const,
+        x: runs,
+        y: runningProb.map((p, i) => Math.min(100, p + runningCI[i])),
+        mode: "lines" as const,
+        line: { width: 0 },
+        showlegend: false,
+        hoverinfo: "skip" as const,
+      },
+      lowerBound: {
+        type: "scatter" as const,
+        x: runs,
+        y: runningProb.map((p, i) => Math.max(0, p - runningCI[i])),
+        mode: "lines" as const,
+        line: { width: 0 },
+        fill: "tonexty" as const,
+        fillcolor: "rgba(34, 197, 94, 0.2)",
+        showlegend: false,
+        hoverinfo: "skip" as const,
+      },
+      marketLine: {
+        type: "scatter" as const,
+        x: [1, outcomes.length],
+        y: [result.market_odds * 100, result.market_odds * 100],
+        mode: "lines" as const,
+        line: { color: "#3b82f6", width: 2, dash: "dash" as const },
+        name: "Market Odds",
+      },
+    };
+  })() : null;
+
   return (
     <div className="min-h-screen flex flex-col items-center p-8">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-4xl">
         <h1 className="text-3xl font-bold text-center mb-8">
           {isComplete ? "Results" : "Simulating..."}
         </h1>
@@ -215,6 +312,44 @@ export default function SimulationPage() {
 
         {isComplete && result && (
           <div className="space-y-6">
+            {/* Question Title */}
+            {result.question && (
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                  {result.question}
+                </h2>
+              </div>
+            )}
+
+            {/* Signal Banner */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <div className="text-center">
+                <span
+                  className={`inline-block px-6 py-3 rounded-lg font-bold text-lg ${
+                    result.signal === "BUY_YES"
+                      ? "bg-green-100 text-green-700"
+                      : result.signal === "BUY_NO"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {result.signal === "BUY_YES"
+                    ? "BUY YES"
+                    : result.signal === "BUY_NO"
+                    ? "BUY NO"
+                    : "HOLD"}
+                </span>
+                <div className="mt-2 text-sm text-gray-600">
+                  Simulation: {Math.round(result.probability * 100)}% ± {Math.round(result.ci_95[1] * 100 - result.probability * 100)}% |
+                  Market: {Math.round(result.market_odds * 100)}% |
+                  Diff: {result.difference > 0 ? "+" : ""}{Math.round(result.difference * 100)}pp
+                  {ev && (
+                    <> | EV: {ev.value > 0 ? "+" : ""}{ev.value}/100 on {ev.recommended}</>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-lg shadow-md p-6">
               {/* Main Results */}
               <div className="grid grid-cols-2 gap-6 mb-6">
@@ -232,25 +367,6 @@ export default function SimulationPage() {
                 </div>
               </div>
 
-              {/* Signal */}
-              <div className="text-center mb-6">
-                <span
-                  className={`inline-block px-4 py-2 rounded-full font-semibold ${
-                    result.signal === "BUY_YES"
-                      ? "bg-green-100 text-green-700"
-                      : result.signal === "BUY_NO"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {result.signal === "BUY_YES"
-                    ? `BUY YES (+${Math.round(result.difference * 100)}pp)`
-                    : result.signal === "BUY_NO"
-                    ? `BUY NO (${Math.round(result.difference * 100)}pp)`
-                    : "HOLD"}
-                </span>
-              </div>
-
               {/* Details */}
               <div className="border-t pt-4 text-sm text-gray-600 space-y-2">
                 <div className="flex justify-between">
@@ -263,37 +379,74 @@ export default function SimulationPage() {
                   <span>Monte Carlo Runs</span>
                   <span>{result.n_runs}</span>
                 </div>
+                {ev && (
+                  <div className="flex justify-between">
+                    <span>Expected Value</span>
+                    <span className={ev.value > 0 ? "text-green-600 font-medium" : "text-red-600"}>
+                      {ev.value > 0 ? "+" : ""}{ev.value}/100 on {ev.recommended}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Chart Toggle */}
+            {/* Charts Section */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <button
-                onClick={() => setShowChart(!showChart)}
-                className="w-full text-left font-medium text-gray-700 flex justify-between items-center"
-              >
-                <span>Distribution Chart</span>
-                <span>{showChart ? "▼" : "▶"}</span>
-              </button>
+              <h3 className="font-medium text-gray-700 mb-4">Simulation Results</h3>
 
-              {showChart && chartData.length > 0 && (
-                <div className="mt-4">
-                  <Plot
-                    data={chartData}
-                    layout={{
-                      autosize: true,
-                      height: 300,
-                      margin: { l: 40, r: 20, t: 20, b: 40 },
-                      xaxis: { title: { text: "Outcome" } },
-                      yaxis: { title: { text: "Count" } },
-                      paper_bgcolor: "transparent",
-                      plot_bgcolor: "transparent",
-                    }}
-                    config={{ responsive: true, displayModeBar: false }}
-                    style={{ width: "100%" }}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Bar Chart - Final Results */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2 text-center">Final Results</h4>
+                  {barChartData.length > 0 && (
+                    <Plot
+                      data={marketOddsLine ? [...barChartData, marketOddsLine] : barChartData}
+                      layout={{
+                        autosize: true,
+                        height: 250,
+                        margin: { l: 40, r: 20, t: 10, b: 40 },
+                        xaxis: { title: { text: "Outcome" } },
+                        yaxis: { title: { text: "Count" } },
+                        paper_bgcolor: "transparent",
+                        plot_bgcolor: "transparent",
+                        showlegend: false,
+                      }}
+                      config={{ responsive: true, displayModeBar: false }}
+                      style={{ width: "100%" }}
+                    />
+                  )}
                 </div>
-              )}
+
+                {/* Convergence Chart */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2 text-center">Convergence Over Time</h4>
+                  {convergenceData && (
+                    <Plot
+                      data={[
+                        convergenceData.upperBound,
+                        convergenceData.lowerBound,
+                        convergenceData.probability,
+                        convergenceData.marketLine,
+                      ]}
+                      layout={{
+                        autosize: true,
+                        height: 250,
+                        margin: { l: 40, r: 20, t: 10, b: 40 },
+                        xaxis: { title: { text: "Run #" } },
+                        yaxis: {
+                          title: { text: "Probability (%)" },
+                          range: [0, 100],
+                        },
+                        paper_bgcolor: "transparent",
+                        plot_bgcolor: "transparent",
+                        showlegend: false,
+                      }}
+                      config={{ responsive: true, displayModeBar: false }}
+                      style={{ width: "100%" }}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Model Explainer */}

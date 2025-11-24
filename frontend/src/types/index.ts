@@ -27,6 +27,7 @@ export interface SimulationStatus {
 }
 
 export interface SimulationResult {
+  question?: string;
   probability: number;
   ci_95: [number, number];
   n_runs: number;
