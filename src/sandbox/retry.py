@@ -3,10 +3,11 @@ Retry loop and Monte Carlo execution for E2B sandbox.
 """
 
 import os
+import re
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Callable
 from e2b_code_interpreter import Sandbox
 from e2b.sandbox.commands.command_handle import CommandExitException
 from dotenv import load_dotenv
@@ -40,7 +41,8 @@ def execute_with_retry_sync(
     code: str,
     max_retries: int = 5,
     fallback_code: Optional[str] = None,
-    filename_prefix: str = "simulation"
+    filename_prefix: str = "simulation",
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ExecutionResult:
     """
     Execute code in E2B sandbox with retry on error (sync version).
@@ -53,6 +55,7 @@ def execute_with_retry_sync(
         code: Python code to execute
         max_retries: Maximum number of retry attempts
         fallback_code: Optional fallback code if all retries fail
+        progress_callback: Optional callback(current, total) for progress updates
 
     Returns:
         ExecutionResult with output or error
@@ -62,20 +65,39 @@ def execute_with_retry_sync(
     current_code = code
     last_error = None
 
+    # Collect stdout for parsing results
+    collected_output = []
+
+    def handle_stdout(data: str):
+        collected_output.append(data)
+        # Check for progress updates
+        if progress_callback:
+            match = re.search(r'PROGRESS:(\d+)/(\d+)', data)
+            if match:
+                current = int(match.group(1))
+                total = int(match.group(2))
+                progress_callback(current, total)
+
     for attempt in range(max_retries):
         # Write code to sandbox - use unique filename to avoid permission issues
         filename = f'/tmp/{filename_prefix}_{attempt}.py'
         sbx.files.write(filename, current_code)
+        collected_output.clear()
 
         # Execute - catch exception on non-zero exit
         try:
-            result = sbx.commands.run(f'python3 {filename}', timeout=120)
+            result = sbx.commands.run(
+                f'python3 {filename}',
+                timeout=120,
+                on_stdout=handle_stdout
+            )
 
             if result.exit_code == 0:
-                # Success - parse output
+                # Success - parse output (use collected output for streaming)
+                output = ''.join(collected_output) if collected_output else result.stdout
                 return ExecutionResult(
                     success=True,
-                    output=result.stdout,
+                    output=output,
                     error=None
                 )
 
@@ -98,12 +120,18 @@ def execute_with_retry_sync(
     if fallback_code:
         logger.warning("All retries failed, using fallback model...")
         sbx.files.write('/tmp/simulation.py', fallback_code)
-        result = sbx.commands.run('python3 /tmp/simulation.py', timeout=120)
+        collected_output.clear()
+        result = sbx.commands.run(
+            'python3 /tmp/simulation.py',
+            timeout=120,
+            on_stdout=handle_stdout
+        )
 
         if result.exit_code == 0:
+            output = ''.join(collected_output) if collected_output else result.stdout
             return ExecutionResult(
                 success=True,
-                output=result.stdout,
+                output=output,
                 error=None,
                 used_fallback=True
             )
@@ -165,7 +193,8 @@ def execute_monte_carlo_sync(
     fallback_code: Optional[str] = None,
     auto_calibrate: bool = True,
     n_calibration: int = 50,
-    simulation_mode: str = None
+    simulation_mode: str = None,
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ExecutionResult:
     """
     Execute Monte Carlo simulation with retry loop (sync version).
@@ -321,7 +350,10 @@ def execute_monte_carlo_sync(
             logger.warning(f"Calibration failed: {cal_result.error}, using original threshold")
 
     # Execute the generated code (with calibrated threshold if successful)
-    result = execute_with_retry_sync(sbx, current_code, max_retries, fallback_code)
+    result = execute_with_retry_sync(
+        sbx, current_code, max_retries, fallback_code,
+        progress_callback=progress_callback
+    )
 
     if result.success:
         # Parse the JSON output
@@ -365,12 +397,13 @@ async def execute_monte_carlo(
     fallback_code: Optional[str] = None,
     auto_calibrate: bool = True,
     n_calibration: int = 50,
-    simulation_mode: str = None
+    simulation_mode: str = None,
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ExecutionResult:
     """Async wrapper for execute_monte_carlo_sync."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None, lambda: execute_monte_carlo_sync(
-            sbx, code, n_runs, max_retries, fallback_code, auto_calibrate, n_calibration, simulation_mode
+            sbx, code, n_runs, max_retries, fallback_code, auto_calibrate, n_calibration, simulation_mode, progress_callback
         )
     )

@@ -79,6 +79,10 @@ def run_monte_carlo(n_runs: int = 200, threshold: float = 0.5, mode: str = "thre
 
         results.append(1 if success else 0)
 
+        # Report progress every 10 runs
+        if (seed + 1) % 10 == 0 or seed == n_runs - 1:
+            print(f"PROGRESS:{seed + 1}/{n_runs}", flush=True)
+
     probability = sum(results) / len(results)
     ci_95 = 1.96 * (probability * (1 - probability) / n_runs) ** 0.5
 

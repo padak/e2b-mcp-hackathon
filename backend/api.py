@@ -260,12 +260,17 @@ async def run_simulation(sim_id: str, question: str, yes_odds: float, n_runs: in
             sim["progress"] = {"current": 0, "total": n_runs}
             add_log(f"Running Monte Carlo ({n_runs} runs)...")
 
+            # Progress callback to update simulation state
+            def update_progress(current: int, total: int):
+                sim["progress"] = {"current": current, "total": total}
+
             result = await execute_monte_carlo(
                 sbx=sbx,
                 code=code,
                 n_runs=n_runs,
                 max_retries=5,
-                fallback_code=fallback_code
+                fallback_code=fallback_code,
+                progress_callback=update_progress
             )
 
             if not result.success:
