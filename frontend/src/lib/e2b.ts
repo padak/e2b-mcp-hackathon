@@ -67,22 +67,26 @@ export async function getBackendUrl(): Promise<string> {
 
     // Install dependencies
     console.log("Installing dependencies...");
-    const pipResult = await backendSandbox.commands.run(
-      "cd /home/user/app && pip install -r requirements.txt fastapi uvicorn python-dotenv 2>&1",
-      { timeoutMs: 180000 }
-    );
-    if (pipResult.exitCode !== 0) {
-      console.error(`Pip install failed with exit code ${pipResult.exitCode}`);
-      console.error(`Stdout: ${pipResult.stdout}`);
-      console.error(`Stderr: ${pipResult.stderr}`);
+    try {
+      await backendSandbox.commands.run(
+        "cd /home/user/app && pip install -r requirements.txt fastapi uvicorn python-dotenv 2>&1",
+        { timeoutMs: 180000 }
+      );
+      console.log("Dependencies installed successfully");
+    } catch (pipError) {
+      console.error("Pip install failed:", pipError);
       // Try installing core dependencies only
       console.log("Retrying with core dependencies only...");
-      await backendSandbox.commands.run(
-        "pip install fastapi uvicorn python-dotenv anthropic e2b-code-interpreter mesa numpy",
-        { timeoutMs: 120000 }
-      );
-    } else {
-      console.log("Dependencies installed successfully");
+      try {
+        await backendSandbox.commands.run(
+          "pip install fastapi uvicorn python-dotenv anthropic e2b-code-interpreter mesa numpy pandas plotly httpx pydantic rich mcp",
+          { timeoutMs: 180000 }
+        );
+        console.log("Core dependencies installed");
+      } catch (coreError) {
+        console.error("Core install also failed:", coreError);
+        throw new Error("Failed to install dependencies in E2B sandbox");
+      }
     }
 
     // Create .env file with API keys
