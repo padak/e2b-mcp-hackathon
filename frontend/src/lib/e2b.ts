@@ -69,13 +69,13 @@ export async function getBackendUrl(): Promise<string> {
     console.log("Installing API server dependencies...");
     try {
       await backendSandbox.commands.run(
-        "pip install fastapi uvicorn",
-        { timeoutMs: 60000 }
+        "pip install fastapi uvicorn e2b-code-interpreter",
+        { timeoutMs: 90000 }
       );
       console.log("API dependencies installed");
     } catch (pipError) {
       console.error("Failed to install API dependencies:", pipError);
-      throw new Error("Failed to install fastapi/uvicorn in E2B sandbox");
+      throw new Error("Failed to install dependencies in E2B sandbox");
     }
 
     // Create .env file with API keys
