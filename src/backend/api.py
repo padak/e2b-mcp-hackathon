@@ -288,6 +288,7 @@ async def run_simulation(sim_id: str, request: SimulationRequest):
                 "outcomes": result.results,
                 "used_fallback": result.used_fallback,
                 "model_explanation": model_explanation,
+                "model_code": code,
             }
 
             add_log(f"Simulation complete: {probability:.0%} probability, signal: {signal}")

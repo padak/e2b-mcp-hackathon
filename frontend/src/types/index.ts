@@ -37,6 +37,7 @@ export interface SimulationResult {
   expected_value?: number;
   outcomes?: number[];
   model_explanation?: ModelExplanation;
+  model_code?: string;
 }
 
 export interface LogEntry {

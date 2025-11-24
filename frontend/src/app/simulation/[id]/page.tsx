@@ -73,6 +73,17 @@ export default function SimulationPage() {
     URL.revokeObjectURL(url);
   };
 
+  const downloadModel = () => {
+    if (!simulation?.result?.model_code) return;
+    const blob = new Blob([simulation.result.model_code], { type: "text/x-python" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `model-${id}.py`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
@@ -455,13 +466,21 @@ export default function SimulationPage() {
             )}
 
             {/* Actions */}
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => router.push("/")}
                 className="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 New Simulation
               </button>
+              {result.model_code && (
+                <button
+                  onClick={downloadModel}
+                  className="flex-1 py-2 px-4 border border-green-500 text-green-600 rounded-lg hover:bg-green-50 transition-colors"
+                >
+                  Download Model
+                </button>
+              )}
               <button
                 onClick={downloadResult}
                 className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
