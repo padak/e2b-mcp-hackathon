@@ -68,11 +68,21 @@ export async function getBackendUrl(): Promise<string> {
     // Install dependencies
     console.log("Installing dependencies...");
     const pipResult = await backendSandbox.commands.run(
-      "cd /home/user/app && pip install -r requirements.txt fastapi uvicorn",
-      { timeoutMs: 120000 }
+      "cd /home/user/app && pip install -r requirements.txt fastapi uvicorn python-dotenv 2>&1",
+      { timeoutMs: 180000 }
     );
     if (pipResult.exitCode !== 0) {
-      console.warn(`Pip warnings: ${pipResult.stderr}`);
+      console.error(`Pip install failed with exit code ${pipResult.exitCode}`);
+      console.error(`Stdout: ${pipResult.stdout}`);
+      console.error(`Stderr: ${pipResult.stderr}`);
+      // Try installing core dependencies only
+      console.log("Retrying with core dependencies only...");
+      await backendSandbox.commands.run(
+        "pip install fastapi uvicorn python-dotenv anthropic e2b-code-interpreter mesa numpy",
+        { timeoutMs: 120000 }
+      );
+    } else {
+      console.log("Dependencies installed successfully");
     }
 
     // Create .env file with API keys
