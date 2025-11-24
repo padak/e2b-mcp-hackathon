@@ -118,7 +118,8 @@ async def run_pipeline(
             code=code,
             n_runs=n_runs,
             max_retries=max_retries,
-            fallback_code=fallback_code
+            fallback_code=fallback_code,
+            simulation_mode=os.getenv("SIMULATION_MODE", "probability")
         )
 
         if not result.success:
