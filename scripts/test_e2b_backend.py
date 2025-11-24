@@ -60,19 +60,39 @@ async def test_backend_setup():
             return False
         print(f"   ✓ Repository cloned")
 
+        # Check Python version
+        print("\n3. Checking default Python version...")
+        result = sbx.commands.run("python3 --version", timeout=10)
+        print(f"   {result.stdout.strip()}")
+
+        # Install uv and newer Python
+        print("\n3b. Installing uv and Python 3.12...")
+        try:
+            result = sbx.commands.run("curl -LsSf https://astral.sh/uv/install.sh | sh", timeout=60)
+            if result.exit_code == 0:
+                print("   ✓ uv installed")
+            # Install Python 3.12
+            result = sbx.commands.run("~/.local/bin/uv python install 3.12", timeout=120)
+            if result.exit_code == 0:
+                print("   ✓ Python 3.12 installed")
+            # Check version
+            result = sbx.commands.run("~/.local/bin/uv run --python 3.12 python --version", timeout=10)
+            print(f"   New Python: {result.stdout.strip()}")
+        except Exception as e:
+            print(f"   ERROR: {e}")
+
         # Check what's installed
-        print("\n3. Checking pre-installed packages...")
+        print("\n4. Checking pre-installed packages...")
         result = sbx.commands.run("pip3 list | grep -E 'mesa|numpy|anthropic|e2b|mcp|fastapi'", timeout=30)
         print(f"   Pre-installed:\n{result.stdout}")
 
         # Try installing dependencies
-        print("\n4. Installing dependencies...")
+        print("\n5. Installing dependencies...")
         packages = [
             "fastapi",
             "uvicorn",
             "e2b-code-interpreter",
             "anthropic",
-            "mcp",
             "httpx",
             "pydantic",
         ]
@@ -89,8 +109,31 @@ async def test_backend_setup():
             except Exception as e:
                 print(f"ERROR: {e}")
 
+        # Create venv with Python 3.12 and install all packages there
+        print("\n6. Creating Python 3.12 venv and installing packages...")
+        try:
+            # Create venv
+            result = sbx.commands.run(
+                "~/.local/bin/uv venv /home/user/.venv --python 3.12",
+                timeout=60
+            )
+            if result.exit_code == 0:
+                print("   ✓ .venv created")
+
+            # Install all packages including mcp using uv
+            result = sbx.commands.run(
+                "~/.local/bin/uv pip install --python /home/user/.venv/bin/python fastapi uvicorn e2b-code-interpreter anthropic httpx pydantic mcp",
+                timeout=180
+            )
+            if result.exit_code == 0:
+                print("   ✓ All packages installed (including mcp)")
+            else:
+                print(f"   FAILED: {result.stderr[:300]}")
+        except Exception as e:
+            print(f"   ERROR: {e}")
+
         # Verify installations
-        print("\n5. Verifying installations...")
+        print("\n7. Verifying installations...")
         result = sbx.commands.run("pip3 list | grep -E 'fastapi|uvicorn|e2b|anthropic|mcp'", timeout=30)
         print(f"   Installed packages:\n{result.stdout}")
 
@@ -117,11 +160,11 @@ PERPLEXITY_API_KEY={perplexity_key}
             print(f"   ERROR: {result.stderr}")
             return False
 
-        # Start server
+        # Start server in background
         print("\n8. Starting FastAPI server...")
         sbx.commands.run(
-            "cd /home/user/app/src && python3 -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 &",
-            timeout=5
+            "cd /home/user/app/src && python3 -m uvicorn backend.api:app --host 0.0.0.0 --port 8000",
+            background=True
         )
 
         # Wait and check

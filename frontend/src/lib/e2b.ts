@@ -65,12 +65,25 @@ export async function getBackendUrl(): Promise<string> {
       throw new Error(`Failed to clone repo: ${cloneResult.stderr}`);
     }
 
-    // Install dependencies (skip mcp - it's either pre-installed or a dependency)
+    // Install uv and create Python 3.12 venv
     console.log("Installing dependencies...");
     try {
-      const installResult = await backendSandbox.commands.run(
-        "pip3 install fastapi uvicorn e2b-code-interpreter anthropic httpx pydantic",
+      // Install uv
+      await backendSandbox.commands.run(
+        "curl -LsSf https://astral.sh/uv/install.sh | sh",
+        { timeoutMs: 60000 }
+      );
+
+      // Install Python 3.12 and create venv
+      await backendSandbox.commands.run(
+        "~/.local/bin/uv python install 3.12 && ~/.local/bin/uv venv /home/user/.venv --python 3.12",
         { timeoutMs: 120000 }
+      );
+
+      // Install all packages including mcp
+      await backendSandbox.commands.run(
+        "~/.local/bin/uv pip install --python /home/user/.venv/bin/python fastapi uvicorn e2b-code-interpreter anthropic httpx pydantic mcp",
+        { timeoutMs: 180000 }
       );
       console.log("Dependencies installed");
     } catch (pipError) {
@@ -87,10 +100,10 @@ PERPLEXITY_API_KEY=${perplexityKey}
 `;
     await backendSandbox.files.write("/home/user/app/.env", envContent);
 
-    // Start the backend server
+    // Start the backend server using .venv Python
     console.log("Starting FastAPI backend...");
     backendSandbox.commands.run(
-      "cd /home/user/app/src && python3 -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 2>&1",
+      "cd /home/user/app/src && /home/user/.venv/bin/python -m uvicorn backend.api:app --host 0.0.0.0 --port 8000 2>&1",
       { background: true }
     );
 
@@ -100,7 +113,7 @@ PERPLEXITY_API_KEY=${perplexityKey}
     // Try to capture any startup errors
     try {
       const testImport = await backendSandbox.commands.run(
-        "cd /home/user/app/src && python3 -c 'from backend.api import app; print(\"Import OK\")'",
+        "cd /home/user/app/src && /home/user/.venv/bin/python -c 'from backend.api import app; print(\"Import OK\")'",
         { timeoutMs: 10000 }
       );
       console.log("Backend import test:", testImport.stdout);

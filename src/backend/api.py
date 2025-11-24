@@ -238,11 +238,21 @@ async def run_simulation(sim_id: str, request: SimulationRequest):
             model_info = extract_model_info(code, request.question)
 
             # Build model explanation from extracted info
+            # Better sentence splitting - split on '. ' or '.\n' to avoid breaking mid-sentence
+            import re
+            sentences = re.split(r'\.\s+', research)
+            # Clean up markdown and take first 4 meaningful sentences
+            highlights = []
+            for s in sentences[:8]:  # Check more to find good ones
+                clean = s.strip().replace('**', '').replace('*', '')
+                if len(clean) > 30 and len(highlights) < 4:
+                    # Add period back and truncate if too long
+                    if len(clean) > 200:
+                        clean = clean[:197] + "..."
+                    highlights.append(clean + ".")
+
             model_explanation = {
-                "research_highlights": [
-                    line.strip() for line in research.split('.')[:4]
-                    if len(line.strip()) > 20
-                ] or ["Market data analyzed", "Recent trends identified"],
+                "research_highlights": highlights or ["Market data analyzed", "Recent trends identified"],
                 "agents": {
                     agent["name"]: {
                         "count": agent["count"],
