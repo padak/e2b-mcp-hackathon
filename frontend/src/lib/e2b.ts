@@ -65,12 +65,12 @@ export async function getBackendUrl(): Promise<string> {
       throw new Error(`Failed to clone repo: ${cloneResult.stderr}`);
     }
 
-    // Install only missing dependencies (template has mesa, numpy, etc. pre-installed)
+    // Install missing dependencies (template has mesa, numpy, etc. pre-installed)
     console.log("Installing API server dependencies...");
     try {
       await backendSandbox.commands.run(
-        "pip install fastapi uvicorn e2b-code-interpreter",
-        { timeoutMs: 90000 }
+        "pip install fastapi uvicorn e2b-code-interpreter mcp anthropic",
+        { timeoutMs: 120000 }
       );
       console.log("API dependencies installed");
     } catch (pipError) {
