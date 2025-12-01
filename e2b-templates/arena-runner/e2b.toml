@@ -1,0 +1,9 @@
+# E2B Template configuration for LLM Prediction Arena
+# This template includes Node.js + Python + claude-code-router
+
+[template]
+dockerfile = "e2b.Dockerfile"
+template_name = "arena-runner"
+
+[template.build_args]
+# No build args needed - API keys are passed at runtime
