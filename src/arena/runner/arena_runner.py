@@ -26,12 +26,12 @@ from typing import Optional
 
 # These imports work when running as a script
 try:
-    from tools import TOOL_DEFINITIONS, ToolMetrics
+    from tools import TOOL_DEFINITIONS, SIMULATION_TOOL_DEFINITIONS, DIRECT_TOOL_DEFINITIONS, REASONING_TOOL_DEFINITIONS, ToolMetrics
     from hooks import create_tool_handler, RunLog
     from prompts import get_system_prompt, get_user_prompt
 except ImportError:
     # When imported as a module
-    from .tools import TOOL_DEFINITIONS, ToolMetrics
+    from .tools import TOOL_DEFINITIONS, SIMULATION_TOOL_DEFINITIONS, DIRECT_TOOL_DEFINITIONS, REASONING_TOOL_DEFINITIONS, ToolMetrics
     from .hooks import create_tool_handler, RunLog
     from .prompts import get_system_prompt, get_user_prompt
 
@@ -199,10 +199,13 @@ class ArenaRunner:
         # Determine which tools to provide based on mode
         if run_log.mode == "direct":
             # Direct mode only gets submit_prediction
-            tools_list = [t for t in TOOL_DEFINITIONS if t["name"] == "submit_prediction"]
+            tools_list = DIRECT_TOOL_DEFINITIONS
+        elif run_log.mode == "reasoning":
+            # Reasoning mode gets execute_code, install_package, submit_prediction (no Mesa)
+            tools_list = REASONING_TOOL_DEFINITIONS
         else:
-            # Simulation mode gets all tools
-            tools_list = TOOL_DEFINITIONS
+            # Simulation mode gets all tools including generate_mesa_model
+            tools_list = SIMULATION_TOOL_DEFINITIONS
 
         tools = convert_tools_to_openai_format(tools_list)
 
@@ -210,9 +213,9 @@ class ArenaRunner:
             logger.info(f"Turn {turn + 1}/{self.max_turns}")
 
             try:
-                # Force tool use on first turn for direct mode
-                # (otherwise model tends to just output text without submitting)
-                if run_log.mode == "direct" and turn == 0:
+                # Force tool use on first turn for ALL modes
+                # GPT-4o-mini tends to just output text without calling tools
+                if turn == 0:
                     tool_choice = "required"
                 else:
                     tool_choice = "auto"
@@ -226,7 +229,25 @@ class ArenaRunner:
                     max_tokens=4096,
                 )
 
+                # Record token usage if available
+                if response.usage:
+                    run_log.metrics.record_tokens(
+                        prompt_tokens=response.usage.prompt_tokens,
+                        completion_tokens=response.usage.completion_tokens,
+                        model_id=self.model_id,
+                    )
+
+                # Defensive checks for malformed API responses
+                if not response.choices:
+                    logger.error("Empty choices in API response")
+                    run_log.error = "API returned empty choices"
+                    return
+
                 msg = response.choices[0].message
+                if msg is None:
+                    logger.error("Null message in API response")
+                    run_log.error = "API returned null message"
+                    return
 
                 # Add assistant message to history
                 messages.append(msg.model_dump())
@@ -241,8 +262,12 @@ class ArenaRunner:
                     should_stop = False
 
                     for tc in msg.tool_calls:
+                        # Defensive check for malformed tool calls
+                        if tc.function is None:
+                            logger.warning("Null function in tool call, skipping")
+                            continue
                         fn_name = tc.function.name
-                        fn_args = json.loads(tc.function.arguments)
+                        fn_args = json.loads(tc.function.arguments or "{}")
 
                         logger.info(f"Tool call: {fn_name}")
                         result = handler.handle_tool_call(fn_name, fn_args)
@@ -291,7 +316,7 @@ def main():
     parser.add_argument("--closed-time", default="", help="When market closed")
     parser.add_argument(
         "--mode",
-        choices=["direct", "simulation"],
+        choices=["direct", "simulation", "reasoning"],
         required=True,
         help="Evaluation mode",
     )

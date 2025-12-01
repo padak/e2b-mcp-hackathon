@@ -88,3 +88,4 @@ src/
 ### Results
 - Saved to `results/{timestamp}/` with `result.html` and `model.py`
 - HTML contains interactive Plotly chart comparing simulation vs market odds
+- ok, keep this as a change against the plan, add it to ADR_01.md with explanation. all similar changes need to have ADR_xx.md.

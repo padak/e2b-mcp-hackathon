@@ -12,9 +12,25 @@ from datetime import datetime, timezone
 
 # Support both relative and absolute imports (for E2B sandbox)
 try:
-    from .tools import ToolMetrics, execute_code, install_package, validate_prediction
+    from .tools import (
+        ToolMetrics,
+        execute_code,
+        install_package,
+        validate_prediction,
+        execute_mesa_model,
+        get_mesa_error_feedback,
+        format_mesa_success_output,
+    )
 except ImportError:
-    from tools import ToolMetrics, execute_code, install_package, validate_prediction
+    from tools import (
+        ToolMetrics,
+        execute_code,
+        install_package,
+        validate_prediction,
+        execute_mesa_model,
+        get_mesa_error_feedback,
+        format_mesa_success_output,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +63,11 @@ class RunLog:
     prediction: Optional[dict] = None  # {probability, reasoning, valid}
     error: Optional[str] = None
 
+    # MESA-specific fields
+    mesa_calibration: Optional[dict] = None  # {mean, std, min, max, threshold}
+    mesa_monte_carlo: Optional[dict] = None  # {probability, ci_95, n_runs}
+    mesa_agent_code: Optional[str] = None  # Last successful agent code
+
     def add_tool_call(self, call: ToolCall) -> None:
         """Add a tool call to the log."""
         self.tool_calls.append(call)
@@ -59,13 +80,33 @@ class RunLog:
             "valid": valid,
         }
 
+    def set_mesa_results(
+        self,
+        calibration: Optional[dict] = None,
+        monte_carlo: Optional[dict] = None,
+        agent_code: Optional[str] = None,
+    ) -> None:
+        """Set MESA simulation results."""
+        if calibration:
+            self.mesa_calibration = calibration
+            # Record calibration metrics
+            if "std" in calibration and "threshold" in calibration:
+                self.metrics.record_calibration(
+                    calibration["std"],
+                    calibration["threshold"],
+                )
+        if monte_carlo:
+            self.mesa_monte_carlo = monte_carlo
+        if agent_code:
+            self.mesa_agent_code = agent_code
+
     def finalize(self) -> None:
         """Mark the run as complete."""
         self.end_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result = {
             "question_id": self.question_id,
             "model_id": self.model_id,
             "mode": self.mode,
@@ -89,6 +130,16 @@ class RunLog:
             "error": self.error,
         }
 
+        # Add MESA results if present
+        if self.mesa_calibration:
+            result["mesa_calibration"] = self.mesa_calibration
+        if self.mesa_monte_carlo:
+            result["mesa_monte_carlo"] = self.mesa_monte_carlo
+        if self.mesa_agent_code:
+            result["mesa_agent_code"] = self.mesa_agent_code
+
+        return result
+
 
 class ToolHandler:
     """Handles tool execution with logging and metrics."""
@@ -101,6 +152,7 @@ class ToolHandler:
         """
         self.run_log = run_log
         self.prediction_submitted = False
+        self.last_mesa_agent_code: Optional[str] = None
 
     def handle_tool_call(self, tool_name: str, tool_input: dict) -> dict:
         """Handle a tool call from the LLM.
@@ -122,6 +174,8 @@ class ToolHandler:
                 result = self._handle_install_package(tool_input)
             elif tool_name == "submit_prediction":
                 result = self._handle_submit_prediction(tool_input)
+            elif tool_name == "generate_mesa_model":
+                result = self._handle_generate_mesa_model(tool_input)
             else:
                 result = {
                     "success": False,
@@ -239,6 +293,59 @@ class ToolHandler:
             return {
                 "success": False,
                 "error": validation.error,
+            }
+
+    def _handle_generate_mesa_model(self, tool_input: dict) -> dict:
+        """Handle generate_mesa_model tool call.
+
+        Executes the Mesa model with calibration and Monte Carlo,
+        returning results or error feedback for self-healing.
+        """
+        agent_code = tool_input.get("agent_code", "")
+        if not agent_code:
+            return {"success": False, "error": "No agent_code provided"}
+
+        # Store for potential later reference
+        self.last_mesa_agent_code = agent_code
+
+        # Execute the Mesa model
+        result = execute_mesa_model(agent_code)
+
+        # Record metrics based on result type
+        is_execution_error = result.error_type == "execution"
+        is_variance_error = result.error_type == "low_variance"
+
+        self.run_log.metrics.record_mesa_model(
+            success=result.success,
+            execution_error=is_execution_error,
+            variance_fix=is_variance_error,
+        )
+
+        # Record execution time
+        self.run_log.metrics.total_execution_time_ms += result.execution_time_ms
+
+        if result.success:
+            # Store successful results
+            self.run_log.set_mesa_results(
+                calibration=result.calibration,
+                monte_carlo=result.monte_carlo,
+                agent_code=agent_code,
+            )
+
+            return {
+                "success": True,
+                "output": format_mesa_success_output(result),
+            }
+        else:
+            # Store partial results (e.g., calibration even if low variance)
+            if result.calibration:
+                self.run_log.set_mesa_results(calibration=result.calibration)
+
+            # Return error feedback for self-healing
+            return {
+                "success": False,
+                "error": get_mesa_error_feedback(result, agent_code),
+                "error_type": result.error_type,
             }
 
 

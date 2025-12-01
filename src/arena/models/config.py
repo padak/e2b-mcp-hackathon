@@ -90,13 +90,13 @@ MODELS = {
         supports_tools=True,
     ),
     # Google models
-    "gemini-2.0-flash": ModelConfig(
-        id="google/gemini-2.0-flash-exp:free",
-        name="Gemini 2.0 Flash",
+    "gemini-2.5-flash": ModelConfig(
+        id="google/gemini-2.5-flash",
+        name="Gemini 2.5 Flash",
         provider="google",
-        router_id="openrouter,google/gemini-2.0-flash-exp:free",
-        input_price=0.0,  # Free tier
-        output_price=0.0,
+        router_id="openrouter,google/gemini-2.5-flash",
+        input_price=0.15,
+        output_price=0.60,
         context_length=1_000_000,
         supports_tools=True,
     ),
@@ -110,13 +110,34 @@ MODELS = {
         context_length=2_000_000,
         supports_tools=True,
     ),
+    # Free models
+    "llama-3.2-3b": ModelConfig(
+        id="meta-llama/llama-3.2-3b-instruct:free",
+        name="Llama 3.2 3B",
+        provider="meta",
+        router_id="openrouter,meta-llama/llama-3.2-3b-instruct:free",
+        input_price=0.0,
+        output_price=0.0,
+        context_length=131_072,
+        supports_tools=True,
+    ),
+    "claude-3-haiku": ModelConfig(
+        id="anthropic/claude-3-haiku",
+        name="Claude 3 Haiku",
+        provider="anthropic",
+        router_id="openrouter,anthropic/claude-3-haiku",
+        input_price=0.25,
+        output_price=1.25,
+        context_length=200_000,
+        supports_tools=True,
+    ),
 }
 
 # Default models for arena evaluation
-DEFAULT_MODELS = ["gpt-4o", "claude-sonnet-4", "gemini-2.0-flash"]
+DEFAULT_MODELS = ["gpt-4o", "claude-sonnet-4", "gemini-2.5-flash"]
 
 # Budget-friendly models for testing
-BUDGET_MODELS = ["gpt-4o-mini", "gemini-2.0-flash"]
+BUDGET_MODELS = ["gpt-4o-mini", "gemini-2.5-flash"]
 
 
 def get_model(model_key: str) -> ModelConfig:

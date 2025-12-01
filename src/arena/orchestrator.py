@@ -2,11 +2,16 @@
 
 The orchestrator:
 1. Loads questions from data source
-2. For each (question, model, mode, trial) combination:
-   - Spawns E2B sandbox
-   - Uploads and runs arena_runner.py
+2. Creates a single E2B sandbox (reused across all runs)
+3. For each (question, model, mode, trial) combination:
+   - Runs arena_runner.py in the shared sandbox
    - Collects results
-3. Aggregates results for scoring
+4. Aggregates results for scoring
+
+Optimizations:
+- Sandbox reuse: Single sandbox for all runs (saves ~10-15s per run)
+- Dependency caching: pip install once at sandbox creation
+- File upload caching: Upload runner files once
 """
 
 import asyncio
@@ -25,6 +30,9 @@ from .data.questions import Question
 from .models.config import ModelConfig, get_model, get_default_models, MODELS
 
 logger = logging.getLogger(__name__)
+
+# Cache for runner code (avoid re-reading files)
+_runner_code_cache: dict[str, str] = {}
 
 
 @dataclass
@@ -54,9 +62,10 @@ class RunResult:
     duration_s: float
     error: Optional[str] = None
     resolved_outcome: Optional[float] = None  # Ground truth
+    log: Optional[dict] = None  # Full conversation log with tool calls
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "question_id": self.question_id,
             "model_id": self.model_id,
             "mode": self.mode,
@@ -68,6 +77,10 @@ class RunResult:
             "error": self.error,
             "resolved_outcome": self.resolved_outcome,
         }
+        # Include log only if present (can be large)
+        if self.log:
+            result["log"] = self.log
+        return result
 
 
 class ArenaOrchestrator:
@@ -88,8 +101,48 @@ class ArenaOrchestrator:
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         self.results: list[RunResult] = []
 
+        # Sandbox management
+        self._sandbox: Optional[Sandbox] = None
+        self._sandbox_initialized: bool = False
+
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY required")
+
+    def _create_sandbox(self) -> Sandbox:
+        """Create and initialize a sandbox with dependencies."""
+        logger.info("Creating E2B sandbox (60 min lifetime)...")
+        sbx = Sandbox.create(timeout=3600)  # 60 minutes lifetime
+
+        # Install dependencies once
+        logger.info("Installing dependencies (openai, mesa, numpy)...")
+        sbx.commands.run("pip install -q openai mesa==2.1.5 numpy")
+
+        # Upload runner files once
+        logger.info("Uploading runner files...")
+        sbx.files.write("/home/user/arena_runner.py", self._get_runner_code())
+        sbx.files.write("/home/user/tools.py", self._get_tools_code())
+        sbx.files.write("/home/user/hooks.py", self._get_hooks_code())
+        sbx.files.write("/home/user/prompts.py", self._get_prompts_code())
+
+        logger.info("Sandbox ready")
+        return sbx
+
+    def _get_sandbox(self) -> Sandbox:
+        """Get or create the shared sandbox."""
+        if self._sandbox is None or not self._sandbox_initialized:
+            self._sandbox = self._create_sandbox()
+            self._sandbox_initialized = True
+        return self._sandbox
+
+    def _cleanup_sandbox(self) -> None:
+        """Clean up the sandbox."""
+        if self._sandbox is not None:
+            try:
+                self._sandbox.kill()
+            except Exception as e:
+                logger.warning(f"Error killing sandbox: {e}")
+            self._sandbox = None
+            self._sandbox_initialized = False
 
     def load_questions(self) -> list[Question]:
         """Load questions based on config."""
@@ -148,44 +201,55 @@ class ArenaOrchestrator:
             f"{self.config.trials} trials = {total_runs} runs"
         )
 
-        run_count = 0
-        for question in questions:
-            for model in models:
-                for mode in self.config.modes:
-                    for trial in range(1, self.config.trials + 1):
-                        run_count += 1
-                        logger.info(
-                            f"[{run_count}/{total_runs}] "
-                            f"{question.id} | {model.id} | {mode} | trial {trial}"
-                        )
+        try:
+            # Create sandbox once for all runs
+            sbx = self._get_sandbox()
 
-                        result = await self._run_single(
-                            question=question,
-                            model=model,
-                            mode=mode,
-                            trial=trial,
-                        )
-                        self.results.append(result)
+            run_count = 0
+            for question in questions:
+                for model in models:
+                    for mode in self.config.modes:
+                        for trial in range(1, self.config.trials + 1):
+                            run_count += 1
+                            logger.info(
+                                f"[{run_count}/{total_runs}] "
+                                f"{question.id} | {model.id} | {mode} | trial {trial}"
+                            )
 
-                        # Log result
-                        if result.success and result.prediction:
-                            pred = result.prediction["probability"]
-                            logger.info(f"  → Prediction: {pred:.2%}")
-                        else:
-                            logger.warning(f"  → Failed: {result.error}")
+                            result = await self._run_single(
+                                sbx=sbx,
+                                question=question,
+                                model=model,
+                                mode=mode,
+                                trial=trial,
+                            )
+                            self.results.append(result)
+
+                            # Log result
+                            if result.success and result.prediction:
+                                pred = result.prediction["probability"]
+                                logger.info(f"  → Prediction: {pred:.2%}")
+                            else:
+                                logger.warning(f"  → Failed: {result.error}")
+
+        finally:
+            # Clean up sandbox
+            self._cleanup_sandbox()
 
         return self.results
 
     async def _run_single(
         self,
+        sbx: Sandbox,
         question: Question,
         model: ModelConfig,
         mode: str,
         trial: int,
     ) -> RunResult:
-        """Run a single evaluation in E2B sandbox."""
+        """Run a single evaluation in the shared E2B sandbox."""
         try:
             result_dict = await self._run_in_sandbox(
+                sbx=sbx,
                 question=question,
                 model=model,
                 mode=mode,
@@ -203,10 +267,11 @@ class ArenaOrchestrator:
                 duration_s=result_dict.get("duration_s", 0),
                 error=result_dict.get("error"),
                 resolved_outcome=question.resolved_outcome,
+                log=result_dict.get("log"),  # Include conversation log
             )
 
         except Exception as e:
-            logger.error(f"Sandbox error: {e}")
+            logger.error(f"Run error: {e}")
             return RunResult(
                 question_id=question.id,
                 model_id=model.id,
@@ -222,87 +287,80 @@ class ArenaOrchestrator:
 
     async def _run_in_sandbox(
         self,
+        sbx: Sandbox,
         question: Question,
         model: ModelConfig,
         mode: str,
         trial: int,
     ) -> dict:
-        """Execute arena runner in E2B sandbox."""
-        # Create sandbox
-        sbx = Sandbox.create()
+        """Execute arena runner in the shared E2B sandbox.
 
+        Dependencies and files are already installed/uploaded in _create_sandbox().
+        """
+        # Escape quotes in question text for shell command
+        escaped_question = question.question.replace('"', '\\"').replace("'", "\\'")
+        escaped_description = (question.description or "").replace('"', '\\"').replace("'", "\\'")
+
+        # Build command
+        cmd = (
+            f"cd /home/user && OPENROUTER_API_KEY='{self.api_key}' "
+            f"python arena_runner.py "
+            f'--question "{escaped_question}" '
+            f'--description "{escaped_description}" '
+            f'--market-id "{question.id}" '
+            f"--volume {question.volume} "
+            f'--closed-time "{question.closed_time or ""}" '
+            f"--mode {mode} "
+            f'--model "{model.id}" '
+            f"--trial {trial} "
+            f"--max-turns {self.config.max_turns}"
+        )
+
+        # Run (no sandbox setup needed - already done)
+        result = sbx.commands.run(cmd, timeout=300)  # 5 min timeout per run
+
+        if result.exit_code != 0:
+            return {
+                "success": False,
+                "error": f"Exit code {result.exit_code}: {result.stderr}",
+            }
+
+        # Parse JSON output
         try:
-            # Install dependencies
-            sbx.commands.run("pip install -q openai")
-
-            # Upload runner files
-            runner_code = self._get_runner_code()
-            sbx.files.write("/home/user/arena_runner.py", runner_code)
-
-            tools_code = self._get_tools_code()
-            sbx.files.write("/home/user/tools.py", tools_code)
-
-            hooks_code = self._get_hooks_code()
-            sbx.files.write("/home/user/hooks.py", hooks_code)
-
-            prompts_code = self._get_prompts_code()
-            sbx.files.write("/home/user/prompts.py", prompts_code)
-
-            # Build command
-            cmd = (
-                f"cd /home/user && OPENROUTER_API_KEY='{self.api_key}' "
-                f"python arena_runner.py "
-                f'--question "{question.question}" '
-                f'--description "{question.description or ""}" '
-                f'--market-id "{question.id}" '
-                f"--volume {question.volume} "
-                f'--closed-time "{question.closed_time or ""}" '
-                f"--mode {mode} "
-                f'--model "{model.id}" '
-                f"--trial {trial} "
-                f"--max-turns {self.config.max_turns}"
-            )
-
-            # Run
-            result = sbx.commands.run(cmd, timeout=240)
-
-            if result.exit_code != 0:
-                return {
-                    "success": False,
-                    "error": f"Exit code {result.exit_code}: {result.stderr}",
-                }
-
-            # Parse JSON output
-            try:
-                return json.loads(result.stdout)
-            except json.JSONDecodeError as e:
-                return {
-                    "success": False,
-                    "error": f"Invalid JSON output: {e}\nStdout: {result.stdout[:500]}",
-                }
-
-        finally:
-            sbx.kill()
+            return json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            return {
+                "success": False,
+                "error": f"Invalid JSON output: {e}\nStdout: {result.stdout[:500]}",
+            }
 
     def _get_runner_code(self) -> str:
-        """Get arena_runner.py source code."""
-        path = Path(__file__).parent / "runner" / "arena_runner.py"
-        return path.read_text()
+        """Get arena_runner.py source code (cached)."""
+        if "runner" not in _runner_code_cache:
+            path = Path(__file__).parent / "runner" / "arena_runner.py"
+            _runner_code_cache["runner"] = path.read_text()
+        return _runner_code_cache["runner"]
 
     def _get_tools_code(self) -> str:
-        """Get tools.py source code."""
-        path = Path(__file__).parent / "runner" / "tools.py"
-        return path.read_text()
+        """Get tools.py source code (cached)."""
+        if "tools" not in _runner_code_cache:
+            path = Path(__file__).parent / "runner" / "tools.py"
+            _runner_code_cache["tools"] = path.read_text()
+        return _runner_code_cache["tools"]
 
     def _get_hooks_code(self) -> str:
-        """Get hooks.py source code."""
-        path = Path(__file__).parent / "runner" / "hooks.py"
-        return path.read_text()
+        """Get hooks.py source code (cached)."""
+        if "hooks" not in _runner_code_cache:
+            path = Path(__file__).parent / "runner" / "hooks.py"
+            _runner_code_cache["hooks"] = path.read_text()
+        return _runner_code_cache["hooks"]
 
     def _get_prompts_code(self) -> str:
-        """Get prompts.py source code."""
-        path = Path(__file__).parent / "runner" / "prompts.py"
-        return path.read_text()
+        """Get prompts.py source code (cached)."""
+        if "prompts" not in _runner_code_cache:
+            path = Path(__file__).parent / "runner" / "prompts.py"
+            _runner_code_cache["prompts"] = path.read_text()
+        return _runner_code_cache["prompts"]
 
     def save_results(self, output_dir: Optional[str] = None) -> str:
         """Save results to JSON file.

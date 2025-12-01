@@ -193,7 +193,7 @@ Examples:
         "--modes",
         type=str,
         default=None,
-        help="Comma-separated modes: direct,simulation (default: both)",
+        help="Comma-separated modes: direct,simulation,reasoning (default: direct,simulation)",
     )
     run_parser.add_argument(
         "--trials",

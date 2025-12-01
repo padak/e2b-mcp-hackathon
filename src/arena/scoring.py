@@ -31,6 +31,17 @@ class ModelScore:
     avg_attempts: float
     valid_rate: float
 
+    # MESA-specific metrics
+    mesa_heal_rate: Optional[float] = None  # Recovery from Mesa errors
+    avg_calibration_std: Optional[float] = None  # Avg variance in calibration
+    mesa_variance_fix_rate: Optional[float] = None  # % needing variance fix
+
+    # Cost metrics
+    total_tokens: int = 0
+    total_cost_usd: float = 0.0
+    avg_tokens_per_run: float = 0.0
+    avg_cost_per_run: float = 0.0
+
     def to_dict(self) -> dict:
         return {
             "model_id": self.model_id,
@@ -42,6 +53,15 @@ class ModelScore:
             "heal_rate": self.heal_rate,
             "avg_attempts": self.avg_attempts,
             "valid_rate": self.valid_rate,
+            # MESA metrics
+            "mesa_heal_rate": self.mesa_heal_rate,
+            "avg_calibration_std": self.avg_calibration_std,
+            "mesa_variance_fix_rate": self.mesa_variance_fix_rate,
+            # Cost metrics
+            "total_tokens": self.total_tokens,
+            "total_cost_usd": self.total_cost_usd,
+            "avg_tokens_per_run": self.avg_tokens_per_run,
+            "avg_cost_per_run": self.avg_cost_per_run,
         }
 
 
@@ -66,28 +86,36 @@ class ArenaScores:
 
     def print_summary(self) -> None:
         """Print a formatted summary of scores."""
-        print("\n" + "=" * 70)
+        print("\n" + "=" * 90)
         print("ARENA SCORES")
-        print("=" * 70)
+        print("=" * 90)
 
         print(f"\nTotal runs: {self.n_total_runs}")
         print(f"Valid predictions: {self.n_valid_predictions} ({self.overall_valid_rate:.1%})")
         if self.overall_brier is not None:
             print(f"Overall Brier Score: {self.overall_brier:.4f}")
 
-        print("\n" + "-" * 70)
-        print(f"{'Model':<30} {'Mode':<12} {'Brier':<10} {'Valid%':<10} {'1st-try%':<10}")
-        print("-" * 70)
+        # Calculate total cost
+        total_tokens = sum(s.total_tokens for s in self.model_scores)
+        total_cost = sum(s.total_cost_usd for s in self.model_scores)
+        print(f"Total tokens: {total_tokens:,}")
+        print(f"Total cost: ${total_cost:.4f}")
+
+        print("\n" + "-" * 90)
+        print(f"{'Model':<25} {'Mode':<10} {'Brier':<8} {'Valid%':<8} {'1st-try':<8} {'Tokens':<10} {'Cost':<8}")
+        print("-" * 90)
 
         for score in sorted(self.model_scores, key=lambda s: (s.model_id, s.mode)):
             brier_str = f"{score.brier_score:.4f}" if score.brier_score is not None else "N/A"
             first_try_str = f"{score.first_try_rate:.1%}" if score.first_try_rate is not None else "N/A"
+            tokens_str = f"{score.total_tokens:,}"
+            cost_str = f"${score.total_cost_usd:.4f}"
             print(
-                f"{score.model_id:<30} {score.mode:<12} {brier_str:<10} "
-                f"{score.valid_rate:.1%}      {first_try_str}"
+                f"{score.model_id:<25} {score.mode:<10} {brier_str:<8} "
+                f"{score.valid_rate:.1%}    {first_try_str:<8} {tokens_str:<10} {cost_str}"
             )
 
-        print("=" * 70)
+        print("=" * 90)
 
 
 def compute_brier_score(predictions: list[float], outcomes: list[float]) -> float:
@@ -193,6 +221,56 @@ def score_results(results: list[dict]) -> ArenaScores:
         else:
             avg_attempts = 0
 
+        # MESA-specific metrics
+        mesa_heal_rate = None
+        avg_calibration_std = None
+        mesa_variance_fix_rate = None
+
+        if mode == "simulation":
+            # MESA heal rate
+            mesa_heal_results = [
+                r for r in group_results
+                if r.get("metrics", {}).get("mesa_heal_rate") is not None
+            ]
+            if mesa_heal_results:
+                mesa_heal_rate = sum(
+                    r["metrics"]["mesa_heal_rate"] for r in mesa_heal_results
+                ) / len(mesa_heal_results)
+
+            # Calibration std
+            cal_std_results = [
+                r for r in group_results
+                if r.get("metrics", {}).get("calibration_std") is not None
+            ]
+            if cal_std_results:
+                avg_calibration_std = sum(
+                    r["metrics"]["calibration_std"] for r in cal_std_results
+                ) / len(cal_std_results)
+
+            # Variance fix rate
+            mesa_model_results = [
+                r for r in group_results
+                if r.get("metrics", {}).get("mesa_model_calls", 0) > 0
+            ]
+            if mesa_model_results:
+                variance_fixes = sum(
+                    r["metrics"].get("mesa_variance_fixes", 0) for r in mesa_model_results
+                )
+                total_calls = sum(
+                    r["metrics"]["mesa_model_calls"] for r in mesa_model_results
+                )
+                mesa_variance_fix_rate = variance_fixes / total_calls if total_calls > 0 else 0
+
+        # Token/cost metrics
+        total_tokens = sum(
+            r.get("metrics", {}).get("total_tokens", 0) for r in group_results
+        )
+        total_cost = sum(
+            r.get("metrics", {}).get("estimated_cost_usd", 0) for r in group_results
+        )
+        avg_tokens = total_tokens / n_runs if n_runs > 0 else 0
+        avg_cost = total_cost / n_runs if n_runs > 0 else 0
+
         model_scores.append(
             ModelScore(
                 model_id=model_id,
@@ -204,6 +282,15 @@ def score_results(results: list[dict]) -> ArenaScores:
                 heal_rate=heal_rate,
                 avg_attempts=avg_attempts,
                 valid_rate=n_valid / n_runs if n_runs > 0 else 0,
+                # MESA metrics
+                mesa_heal_rate=mesa_heal_rate,
+                avg_calibration_std=avg_calibration_std,
+                mesa_variance_fix_rate=mesa_variance_fix_rate,
+                # Cost metrics
+                total_tokens=total_tokens,
+                total_cost_usd=total_cost,
+                avg_tokens_per_run=avg_tokens,
+                avg_cost_per_run=avg_cost,
             )
         )
 
