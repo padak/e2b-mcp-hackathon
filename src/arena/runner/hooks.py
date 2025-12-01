@@ -10,7 +10,11 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 from datetime import datetime, timezone
 
-from .tools import ToolMetrics, execute_code, install_package, validate_prediction
+# Support both relative and absolute imports (for E2B sandbox)
+try:
+    from .tools import ToolMetrics, execute_code, install_package, validate_prediction
+except ImportError:
+    from tools import ToolMetrics, execute_code, install_package, validate_prediction
 
 logger = logging.getLogger(__name__)
 
