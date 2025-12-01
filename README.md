@@ -1,115 +1,204 @@
-# WorldSim Markets
+# LLM Prediction Arena
 
-**"What if we could simulate the world 200 times before placing a bet?"**
+**Benchmark LLMs on prediction market questions across three evaluation modes.**
 
-AI world simulator: **Polymarket crowd odds** vs **AI-generated Monte Carlo forecasts**. Claude writes entire agent-based simulations from scratch, executes them in E2B sandboxes, compares results.
+Compare GPT-4o, Claude, Gemini on code generation, self-healing, and prediction accuracy against resolved Polymarket outcomes.
 
-## The Pivot Story
-
-Started as n8n → E2B workflow migration tool. OAuth hell killed that in 2 hours. New idea: **if we can run arbitrary code in E2B, why not run entire simulated worlds?**
-
-## How It Works
+## Three Evaluation Modes
 
 ```
-┌─────────────────────────── ALL IN E2B SANDBOX ───────────────────────────┐
-│                                                                          │
-│  1. RESEARCH        Perplexity MCP → current events, key actors, data    │
-│         ↓                                                                │
-│  2. GENERATE        Claude Agent → writes complete Mesa simulation       │
-│         ↓                                                                │
-│  3. CALIBRATE       50 runs → find optimal threshold, fix low variance   │
-│         ↓                                                                │
-│  4. SIMULATE        200 Monte Carlo runs → probability distribution      │
-│         ↓                                                                │
-│  5. SELF-HEAL       Error? → Claude fixes code → retry (up to 5x)        │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
-         ↓
-    Compare with Polymarket odds → Interactive Plotly dashboard
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MODE           DESCRIPTION                         TOOLS AVAILABLE         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  direct         LLM predicts from knowledge alone   submit_prediction only  │
+│                                                                             │
+│  reasoning      Free Python computation             execute_code            │
+│                 (math, statistics, heuristics)      install_package         │
+│                                                     submit_prediction       │
+│                                                                             │
+│  simulation     Mesa agent-based modeling           generate_mesa_model     │
+│                 with Monte Carlo + calibration      execute_code            │
+│                                                     install_package         │
+│                                                     submit_prediction       │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key insight**: Claude doesn't tweak parameters—it writes **complete simulation code** with custom agents, behaviors, and outcome logic for each question.
+## Architecture
 
-## Example: Ukraine-Russia Ceasefire
+```
+LOCAL MACHINE
+├── Orchestrator (Python)
+│   ├── Load questions from polymarket-downloader JSON
+│   ├── For each (question, model, mode, trial):
+│   │   1. Run arena_runner with OpenRouter API
+│   │   2. Collect result JSON with metrics
+│   │   3. Score with Brier Score
+│   └── Save results + summary
+│
+└── OpenRouter API
+    └── Routes to GPT-4o, Claude Sonnet, Gemini Flash
 
-**Market**: "Ceasefire by end of 2025?" — Polymarket: 14%
-
-**Step 1 - Perplexity MCP researches**:
-> "Frontline status stalled. Trump administration pushing for negotiations. EU fatigue increasing. Russia holding occupied territories. Ukraine dependent on Western support..."
-
-**Step 2 - Claude generates agents based on research**:
-```python
-class UkraineAgent:
-    ceasefire_willingness = 0.2      # Low - wants territory back
-    territorial_stance = 0.95        # High - won't concede
-    western_support_dependency = 0.85
-
-class RussiaAgent:
-    ceasefire_willingness = 0.35     # Moderate - wants to lock gains
-    territorial_demands = 0.85       # High
-    military_position = 0.6
-
-class WesternPowerAgent:
-    support_level = 0.7              # Declining
-    fatigue = 0.4                    # Rising
-    pressure_for_ceasefire = 0.4     # Increasing
-
-class InternationalMediatorAgent:
-    diplomatic_pressure = 0.5
-    negotiation_progress = 0.2
+EVALUATION LOOP
+├── Arena Runner
+│   ├── System prompt (mode-specific)
+│   ├── Tools: execute_code, install_package, submit_prediction
+│   │   └── + generate_mesa_model (simulation mode only)
+│   ├── Agent loop (up to 10 turns)
+│   └── Metrics collection (tokens, cost, tool calls)
+│
+└── Self-Healing
+    └── Model fixes own errors, retries up to 5x
 ```
 
-**Step 3 - Calibration** (50 runs): find optimal threshold
+## Metrics
 
-**Step 4 - Monte Carlo** (200 runs): **41% ± 7%**
+| Metric | Description |
+|--------|-------------|
+| **Brier Score** | `(prediction - actual)²` — lower is better |
+| **First-try Rate** | % where first execute_code succeeded |
+| **Heal Rate** | % that succeeded after ≥1 failure |
+| **Valid Rate** | % producing valid submit_prediction |
+| **Avg Attempts** | Mean execute_code calls |
+| **Cost** | Estimated USD from token usage |
 
-**Result**: Simulation **+26.5pp** more optimistic than Polymarket crowd
+## Quick Start
 
-📊 [View interactive result](results/20251121_214251/result.html) | 🐍 [View generated model](results/20251121_214251/model.py)
+```bash
+# Setup
+python3.13 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-## Why This Matters
+# Configure
+cp .env.example .env
+# Add: OPENROUTER_API_KEY
 
-| Use Case | Value |
-|----------|-------|
-| **Safe execution** | LLM-generated code runs only in E2B sandbox, never locally |
-| **Blueprint for more** | Same stack → benchmark builder, NPC tuner, scenario planner |
+# Run quick test
+PYTHONPATH=src python -m arena quick-test
+
+# Run full evaluation
+PYTHONPATH=src python -m arena run --models gpt-4o-mini --modes direct,reasoning,simulation
+
+# Score existing results
+PYTHONPATH=src python -m arena score results/arena/arena_results_*.json
+```
+
+## CLI Commands
+
+```bash
+# List available models
+python -m arena list-models
+
+# Run with specific models and modes
+python -m arena run --models gpt-4o-mini,claude-sonnet-4 --modes simulation --trials 3
+
+# Run with custom questions
+python -m arena run --questions data/questions.json --max-questions 10
+```
+
+## Example Output
+
+```
+============================================================
+ARENA SCORES
+============================================================
+
+MODEL: openai/gpt-4o-mini
+
+  MODE: reasoning
+    Runs: 1 (1 valid)
+    Brier Score: 0.4356
+    First-try Rate: 100.00%
+    Avg Attempts: 2.0
+    Avg Cost: $0.0010
+
+  MODE: simulation
+    Runs: 1 (1 valid)
+    Brier Score: 0.2025
+    First-try Rate: 100.00%
+    Mesa Heal Rate: N/A
+    Avg Attempts: 8.0
+    Avg Cost: $0.0117
+```
 
 ## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| Sandbox | **E2B** (`sim-z-gateway` template) |
-| MCP | **Perplexity** via E2B MCP Gateway (Docker HUB ) |
-| LLM | **Claude** + **Claude Agent SDK** (Anthropic) |
+| LLM Routing | **OpenRouter** (GPT-4o, Claude, Gemini) |
 | Simulation | **Mesa 2.1.5** (agent-based modeling) |
-| Data | **Polymarket** Gamma/CLOB API |
-| Viz | **Plotly** + **Rich** CLI |
+| Data | **Polymarket** resolved outcomes |
+| CLI | **Rich** + **argparse** |
 
-## Self-Healing Loop
-
-Generated code breaks? Autonomous fix cycle:
+## Project Structure
 
 ```
-Execute → Error? → Claude analyzes stacktrace → Generates fix → Retry
-                              ↑                              │
-                              └──────── up to 5x ────────────┘
-                                            │
-                              Fallback to reference model if all fail
+src/arena/
+├── cli.py              # Entry point
+├── orchestrator.py     # Main evaluation loop
+├── scoring.py          # Brier score + metrics
+├── models/
+│   └── config.py       # Model definitions
+└── runner/
+    ├── arena_runner.py # Agent loop + OpenAI SDK
+    ├── tools.py        # Tool definitions + handlers
+    ├── hooks.py        # Metrics collection
+    └── prompts.py      # Mode-specific prompts
 ```
 
-**Result**: Closed-loop autonomous code-generation + execution, not fire-and-pray.
+---
 
-## Quick Start
+## Roadmap / TODO
 
-```bash
-python3.13 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Add: ANTHROPIC_API_KEY, E2B_API_KEY, PERPLEXITY_API_KEY
-python src/cli.py
-```
-> **Note:** You need an E2B template with MCP gateway pre-installed.
+> **Status**: Early prototype. Not ready for production or public benchmarking claims.
 
-## Future Extensions
-- **NPC tuner**: same stack for game AI (NPC) behavior optimization
-- **Benchmark builder**: build benchmarks using AI generated code plus static data
-- **Code evolution, arena**: Let Claude Agent optimize code and then let various versions compete against each other in sandboxes
+The following items were identified as necessary before this can be considered a rigorous benchmark:
+
+### Documentation & Methodology
+- [ ] Document prompt formats, temperature, seeds for reproducibility
+- [ ] Specify retry scoring rules and handling of non-numeric outputs
+- [ ] Add methodology section explaining how predictions are elicited
+- [ ] Create CHANGELOG tracking version history
+
+### Data & Validity
+- [ ] Expand question set from 5 to dozens+ with selection criteria
+- [ ] Document question sourcing and resolution policy
+- [ ] Publish full question list with resolution sources/timestamps
+- [ ] Add held-out test split to prevent overfitting
+
+### Metrics & Statistics
+- [ ] Add confidence intervals / error bars to all metrics
+- [ ] Report per-mode variability across trials
+- [ ] Add calibration plots
+- [ ] Define all metric thresholds precisely
+
+### Testing & CI
+- [ ] Add unit tests for parsing, normalization, scoring
+- [ ] Add integration test running all modes on fixture data
+- [ ] Set up CI pipeline with test gate
+- [ ] Test retry logic edge cases
+
+### Simulation Validity
+- [ ] Add sanity tests for Mesa model correctness
+- [ ] Add convergence checks for Monte Carlo
+- [ ] Add baseline comparisons (naive, market-based)
+- [ ] Add diagnostic plots for simulation outputs
+
+### Production Hardening
+- [ ] Document timeouts, rate limits, sandbox lifecycle
+- [ ] Add health checks and fallback handling
+- [ ] Document secrets management
+- [ ] Add guardrails for infinite loops and runaway costs
+
+### Reproducibility
+- [ ] Pin all dependencies with lockfile
+- [ ] Include exact model versions in results
+- [ ] Seed all randomness
+- [ ] Publish run scripts and artifact bundles
+
+---
+
+## Legacy: WorldSim Markets
+
+This project evolved from WorldSim Markets, which used E2B sandboxes + Perplexity MCP for full simulation pipelines. The Arena module focuses specifically on LLM evaluation/benchmarking.
+
+See `src/cli.py` for the original WorldSim implementation.
