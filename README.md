@@ -151,49 +151,81 @@ src/arena/
 
 > **Status**: Early prototype. Not ready for production or public benchmarking claims.
 
-The following items were identified as necessary before this can be considered a rigorous benchmark:
+### v1.0 MVP (7-Day Plan) - Codex Reviewed
 
-### Documentation & Methodology
-- [ ] Document prompt formats, temperature, seeds for reproducibility
-- [ ] Specify retry scoring rules and handling of non-numeric outputs
-- [ ] Add methodology section explaining how predictions are elicited
-- [ ] Create CHANGELOG tracking version history
+#### Day 1: Data Collection
+- [ ] Fetch 75-100 resolved Polymarket questions via polymarket-downloader
+- [ ] Filter: volume >$100k, binary, resolved after Oct 2024
+- [ ] Add difficulty categorization by final price spread:
+  - Easy: >0.85 or <0.15 (strong consensus)
+  - Medium: 0.15-0.35 or 0.65-0.85
+  - Hard: 0.35-0.65 (uncertain)
 
-### Data & Validity
-- [ ] Expand question set from 5 to dozens+ with selection criteria
-- [ ] Document question sourcing and resolution policy
-- [ ] Publish full question list with resolution sources/timestamps
-- [ ] Add held-out test split to prevent overfitting
+#### Day 2: Reproducibility Infrastructure
+- [ ] Add `temperature=0` for deterministic runs (single trial, not 3)
+- [ ] Add leakage guard in prompts ("as of [date]" cutoff)
+- [ ] Pin dependencies (`requirements.lock`)
+- [ ] Add metadata to results (git commit, Python version, prompt version)
 
-### Metrics & Statistics
-- [ ] Add confidence intervals / error bars to all metrics
-- [ ] Report per-mode variability across trials
-- [ ] Add calibration plots
-- [ ] Define all metric thresholds precisely
+#### Day 2.5: Pilot Run
+- [ ] Run pilot on 10 questions before full sweep
+- [ ] Validate cost estimates and runtime
+- [ ] Adjust if variance too high
 
-### Testing & CI
+#### Day 3-4: Full Evaluation
+- [ ] Run 675-900 evals (75-100 questions × 3 models × 3 modes × 1 trial)
+- [ ] Estimated cost: $40-55
+
+#### Day 5: Analysis & Scoring
+- [ ] Add baseline comparisons:
+  - Trivial: always 0.5 → Brier = 0.25
+  - Market: use final Polymarket price as prediction
+- [ ] Use Wilcoxon signed-rank test (not paired t-test)
+- [ ] Bootstrap 95% CI (10k resamples)
+- [ ] Multiple comparison correction (Holm-Bonferroni)
+- [ ] Report Brier by difficulty category (easy/medium/hard)
+
+#### Day 6: Documentation
+- [ ] Create `docs/METHODOLOGY.md` with full prompts
+- [ ] Create CHANGELOG.md
+- [ ] Add LICENSE (MIT)
+- [ ] Create CITATION.cff
+
+#### Day 7: Publication
+- [ ] Git tag v1.0.0
+- [ ] GitHub release with results bundle
+- [ ] Announcements (HN, Twitter, Reddit) - after peer review
+
+---
+
+### v1.1 Roadmap (Post-Publication)
+
+Based on community feedback:
+- [ ] Expand to 200+ questions
+- [ ] Add train/test split
+- [ ] Add calibration curves
+- [ ] Interactive leaderboard
+- [ ] Additional models (Llama, Mistral)
+- [ ] Price evolution analysis (volatility over time)
+- [ ] CI/CD pipeline
+
+---
+
+### Technical Debt (Lower Priority)
+
+#### Testing & CI
 - [ ] Add unit tests for parsing, normalization, scoring
 - [ ] Add integration test running all modes on fixture data
 - [ ] Set up CI pipeline with test gate
-- [ ] Test retry logic edge cases
 
-### Simulation Validity
+#### Simulation Validity
 - [ ] Add sanity tests for Mesa model correctness
 - [ ] Add convergence checks for Monte Carlo
-- [ ] Add baseline comparisons (naive, market-based)
 - [ ] Add diagnostic plots for simulation outputs
 
-### Production Hardening
+#### Production Hardening
 - [ ] Document timeouts, rate limits, sandbox lifecycle
-- [ ] Add health checks and fallback handling
-- [ ] Document secrets management
 - [ ] Add guardrails for infinite loops and runaway costs
-
-### Reproducibility
-- [ ] Pin all dependencies with lockfile
-- [ ] Include exact model versions in results
-- [ ] Seed all randomness
-- [ ] Publish run scripts and artifact bundles
 
 ---
 
