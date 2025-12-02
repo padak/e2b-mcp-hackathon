@@ -1,0 +1,136 @@
+{
+  "batch_name": "politics",
+  "timestamp": "20251202_150500",
+  "total_markets": 10,
+  "successful": 9,
+  "failed": 1,
+  "results": [
+    {
+      "market": {
+        "question": "Will Aftyn Behn win TN-7 Special Election?",
+        "yes_odds": 0.11,
+        "volume": 0.0,
+        "slug": "will-aftyn-behn-win-tn-7-special-election"
+      },
+      "success": true,
+      "probability": 0.315,
+      "ci_95": 0.06437861601494708,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/08_will-aftyn-behn-win-tn-7-special-electio"
+    },
+    {
+      "market": {
+        "question": "Will Nasry Juan Asfura Zablah win the 2025 Honduran presidential election?",
+        "yes_odds": 0.642,
+        "volume": 0.0,
+        "slug": "will-nasry-juan-asfura-zablah-win-the-2025-honduran-presidential-election"
+      },
+      "success": true,
+      "probability": 0.38,
+      "ci_95": 0.06727112902278361,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/04_will-nasry-juan-asfura-zablah-win-the-20"
+    },
+    {
+      "market": {
+        "question": "Will Polymarket US go live in 2025?",
+        "yes_odds": 0.9545,
+        "volume": 0.0,
+        "slug": "will-polymarket-us-go-live-in-2025"
+      },
+      "success": true,
+      "probability": 1.0,
+      "ci_95": 0.0,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/02_will-polymarket-us-go-live-in-2025"
+    },
+    {
+      "market": {
+        "question": "Will Trump nominate Christopher Waller as the next Fed chair?",
+        "yes_odds": 0.036,
+        "volume": 0.0,
+        "slug": "will-trump-nominate-christopher-waller-as-the-next-fed-chair"
+      },
+      "success": true,
+      "probability": 0.17,
+      "ci_95": 0.05206004994235022,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/05_will-trump-nominate-christopher-waller-a"
+    },
+    {
+      "market": {
+        "question": "Will a new country join the Abraham Accords in 2025?",
+        "yes_odds": 0.15,
+        "volume": 0.0,
+        "slug": "will-a-new-country-join-the-abraham-accords-in-2025"
+      },
+      "success": true,
+      "probability": 1.0,
+      "ci_95": 0.0,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/06_will-a-new-country-join-the-abraham-acco"
+    },
+    {
+      "market": {
+        "question": "Enhanced ACA premium tax credits extended in 2025?",
+        "yes_odds": 0.25,
+        "volume": 0.0,
+        "slug": "enhanced-aca-premium-tax-credits-extended-in-2025"
+      },
+      "success": true,
+      "probability": 0.625,
+      "ci_95": 0.06709601329438285,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/01_enhanced-aca-premium-tax-credits-extende"
+    },
+    {
+      "market": {
+        "question": "Will Trump announce Kevin Hassett as next Fed Chair in 2025?",
+        "yes_odds": 0.719,
+        "volume": 0.0,
+        "slug": "will-trump-announce-kevin-hassett-as-next-fed-chair-in-2025"
+      },
+      "success": true,
+      "probability": 0.955,
+      "ci_95": 0.028730885819967345,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/03_will-trump-announce-kevin-hassett-as-nex"
+    },
+    {
+      "market": {
+        "question": "Will Zohran Mamdani win by >9%?",
+        "yes_odds": 0.71,
+        "volume": 0.0,
+        "slug": "will-zohran-mamdani-win-by-over-9"
+      },
+      "success": true,
+      "probability": 0.875,
+      "ci_95": 0.04583530298798078,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/10_will-zohran-mamdani-win-by-9"
+    },
+    {
+      "market": {
+        "question": "2026 Balance of Power: R Senate, R House",
+        "yes_odds": 0.165,
+        "volume": 0.0,
+        "slug": "2026-balance-of-power-r-senate-r-house-537"
+      },
+      "success": true,
+      "probability": 0.14,
+      "ci_95": 0.048089949053830364,
+      "used_fallback": false,
+      "result_dir": "/Users/padak/github/e2b-mcp-hackathon/results/politics_20251202_150500/09_2026-balance-of-power-r-senate-r-house"
+    },
+    {
+      "market": {
+        "question": "Will Trump's approval rating hit 40% in 2025?",
+        "yes_odds": 0.305,
+        "volume": 0.0,
+        "slug": "will-trumps-approval-rating-hit-40-in-2025"
+      },
+      "success": false,
+      "error": "context deadline exceeded: This error is likely due to exceeding 'timeout' \u2014 the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeout' when making the request. Use '0' to disable the timeout."
+    }
+  ]
+}

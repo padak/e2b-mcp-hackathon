@@ -1,0 +1,41 @@
+**Polymarket US is on track to go live in 2025**, currently operating in beta mode with plans for an official launch before the end of the year. The platform has received key regulatory approvals, funding, and developed infrastructure for a regulated U.S. return.
+
+Key points supporting this:
+
+- **Regulatory approval:** Polymarket received an amended Order of Designation from the U.S. Commodity Futures Trading Commission (CFTC), allowing it to operate as a fully regulated Designated Contract Market (DCM). This includes enhanced market supervision, clearing procedures, surveillance, and regulatory reporting (Part 16), which are prerequisites for official launch[3][5].
+
+- **Operational beta:** Founder Shayne Coplan confirmed in November 2025 at a Cantor Fitzgerald conference that Polymarket US resumed operations in beta mode, providing limited event trading access to select users. The platform is in final preparation stages for full U.S. launch[2].
+
+- **Legal resolution:** Polymarket settled past regulatory conflicts, including a $1.4 million fine with the CFTC in 2022 and concluding a DOJ investigation in July 2025. The CFTC withdrew prior claims, clearing the path for regulated U.S. market access[2].
+
+- **Funding and valuation:** Polymarket secured a $2 billion investment from Intercontinental Exchange (operator of NYSE) and is negotiating further funding, with valuations estimated between $12 billion and $15 billion. This capital facilitates platform development and regulatory compliance[2][1].
+
+- **Token plans:** After U.S. rollout, Polymarket plans to launch a native POLY utility token with an airdrop to active users projected for 2026, emphasizing long-term utility and community engagement rather than rushed release[1][6].
+
+- **Partnerships and integrations:** Collaborations include an exclusive partnership with Yahoo Finance to embed prediction markets and integration with Google Finance’s AI updates, expanding user reach and visibility[2].
+
+- **Competitive landscape:** Polymarket faces competition from new U.S. prediction market entrants like Robinhood, Gemini, and CME Group/FanDuel’s upcoming FanDuel Predicts app, suggesting a race to capture market share in 2025[2].
+
+- **Market sentiment:** The Polymarket real-money prediction market question "Will Polymarket US go live in 2025?" has high trading volume (over $14 million) with bets favoring a "Yes" outcome. The market will resolve based on whether a real-money trade occurs on a regulated Polymarket-operated DCM by December 31, 2025[4].
+
+**Factors influencing the outcome:**
+
+- Completion and CFTC acceptance of Part 16 regulatory reporting tests, mandatory before official trading launch[4].
+
+- Successful onboarding of intermediaries (broker-dealers, clearinghouses) and end users under new regulatory requirements[3].
+
+- Competitive pressure to launch before rival platforms establish dominance.
+
+- Maintaining regulatory compliance to avoid delays or additional investigations.
+
+- Execution of planned token launch to incentivize liquidity and user engagement post-launch[1].
+
+In summary, Polymarket has made substantial progress toward a regulated U.S. launch in 2025, with regulatory approval, operational beta, strong financial backing, and strategic partnerships. While some procedural steps remain, market and expert signals indicate a high likelihood it will go live by the end of 2025.
+
+Citations:
+[1] https://blockworks.co/news/polymarket-cmo-confirms-poly-token
+[2] https://forklog.com/en/polymarket-resumes-operations-in-the-us/
+[3] https://www.prnewswire.com/news-releases/polymarket-receives-cftc-approval-of-amended-order-of-designation-enabling-intermediated-us-market-access-302625833.html
+[4] https://polymarket.com/event/will-polymarket-us-go-live-in-2025
+[5] https://www.cryptoninjas.net/news/polymarket-wins-landmark-cftc-approval-clearing-the-way-to-launch-regulated-us-prediction-markets/
+[6] https://bravenewcoin.com/insights/polymarket-secures-cftc-approval-for-regulated-u-s-return

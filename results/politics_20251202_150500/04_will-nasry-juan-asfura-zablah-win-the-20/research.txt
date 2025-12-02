@@ -1,0 +1,44 @@
+## 2025 Honduran Presidential Election - Current Status
+
+Honduras held its general elections on November 30, 2025, with the presidential race centering on three main candidates. The election has been closely contested and remains unresolved as vote counting procedures continue.
+
+## Election Results and Vote Count
+
+With 57.03% of polling places reporting, the results showed an extremely tight race between the two frontrunners[3]:
+
+- **Nasry Asfura** (National Party): 749,022 votes (39.92%)
+- **Salvador Nasralla** (Liberal Party): 748,507 votes (39.89%)
+- **Rixi Moncada** (Liberty and Refoundation): 359,584 votes (19.16%)
+- **Nelson Ávila** (Innovation and Unity Party): 15,991 votes (0.85%)
+- **Mario Rivera** (Christian Democratic Party): 3,217 votes (0.17%)
+
+The margin between Asfura and Nasralla was minimal—just 515 votes out of the votes counted—demonstrating an exceptionally competitive contest[3]. Vote counting halted before Nasralla could take the lead, and officials indicated the resolution would take approximately 30 days[1].
+
+## Prediction Market Odds
+
+Prediction markets reflect significant uncertainty about the final outcome. On the Polymarket platform as of November 30, 2025, Asfura held a 63% probability of winning, while Nasralla was priced at 38% with marginal chances for other candidates[1]. However, a separate market on the margin of victory showed Asfura at 63.8% to win overall, with Nasralla having a 33.8% probability of winning by less than 3 percentage points[5].
+
+## Key Candidates and Political Context
+
+**Nasry Asfura** is a conservative businessman and former mayor of Tegucigalpa (2014-2022) from Honduras's Palestinian Christian community[2]. He leads the right-wing National Party of Honduras and has pledged to create jobs, attract foreign investment, strengthen police capabilities, and align Honduras with the United States rather than China[2]. He has received endorsements from U.S. President Donald Trump and Argentine President Javier Milei[2].
+
+**Salvador Nasralla**, of Lebanese heritage, represents the centrist Liberal Party and previously served as Vice President of Honduras[2]. His campaign positioned him as a moderate alternative to Asfura's conservative platform.
+
+**Rixi Moncada**, the leftist former Minister of Defence, finished third with a significant but non-competitive share of the vote[2].
+
+## International Interference and Controversy
+
+The election has been marked by accusations of fraud and concerns about foreign intervention[2]. Trump publicly threatened to cut U.S. funding to Honduras if his preferred candidate Asfura did not win, stating "If he doesn't win, the United States will not be throwing good money after bad"[2]. This intervention has raised questions about the integrity of the electoral process in a country where corruption is endemic[2].
+
+## Contextual Factors
+
+Honduras faces severe socioeconomic challenges, with approximately 63% of the population living below the poverty line[2]. The country also has Central America's highest homicide rate[2]. If elected, Asfura's National Party is expected to adopt pro-Israel policies similar to former President Juan Orlando Hernández, potentially reversing the current administration's critical stance on Gaza[2].
+
+The resolution of this market depends on the official results as reported by Honduras's National Election Council (CNE), with a deadline of December 31, 2026[1].
+
+Citations:
+[1] https://polymarket.com/event/honduras-presidential-election/will-nasry-juan-asfura-zablah-win-the-2025-honduras-presidential-election
+[2] https://www.newarab.com/news/nasry-asfura-palestinian-who-may-become-honduras-president
+[3] https://en.wikipedia.org/wiki/2025_Honduran_general_election
+[4] https://www.electionguide.org/elections/id/4623/
+[5] https://polymarket.com/event/honduras-presidential-election-margin-of-victory

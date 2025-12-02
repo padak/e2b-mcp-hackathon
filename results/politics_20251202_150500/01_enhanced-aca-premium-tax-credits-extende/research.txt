@@ -1,0 +1,26 @@
+The **enhanced Affordable Care Act (ACA) premium tax credits (PTCs)** are set to **expire at the end of 2025** unless Congress takes further action to extend or make them permanent. These enhancements, initially enacted by the American Rescue Plan Act (ARPA) and extended by the Inflation Reduction Act (IRA), expanded eligibility and made subsidies more generous, including eliminating the 400% federal poverty level (FPL) income cap temporarily[1][2][3].
+
+If these enhanced PTCs expire as scheduled:
+- Millions of Americans who rely on ACA marketplace coverage will face steep premium increases.
+- For example, a family of four earning about 404% FPL ($130,000 in 2025) could see premiums nearly double, from roughly $921 per month to $1,998, an annual increase of about $12,900[1][2].
+- Coverage losses, premium hikes, and affordability challenges will disproportionately affect lower- and middle-income families, older adults above 400% FPL, younger people under 55, rural residents, and populations at higher risk of being uninsured[2].
+- Health insurance enrollment reached 24.3 million in 2025 with 92% receiving these enhanced subsidies; expiration could reverse gains in coverage[2].
+
+**Legislative and Policy Context:**
+- Congress passed related legislation (H.R. 1) in July 2025 tightening enrollment and administrative rules but did not change the expiration date for enhanced PTCs. This includes stricter verification, shortened enrollment periods, and limited access for some groups such as DACA recipients[2].
+- Proposed bills like the Bipartisan Premium Tax Credit Extension Act (H.R. 5145) seek to temporarily extend enhanced PTCs through 2026, projected to increase insured numbers by 2 million but raise the federal deficit by about $23.4 billion for that year[2].
+
+**Budgetary Implications:**
+- Making the enhanced PTCs permanent could add roughly $335 billion to the federal deficit over 2025-2034 due to shifts in coverage, including some workers moving from employer-sponsored insurance to marketplaces[1][2].
+- However, extension or permanence may reduce uninsurance rates and protect millions from premium hikes.
+
+**Economic and Employment Effects:**
+- Analyses predict that expiration will result in significant job losses by affecting household budgets and health coverage stability[4].
+
+In summary, the fate of enhanced ACA premium tax credits in 2025 hinges on congressional decisions amid competing priorities of affordability, coverage gains, budget impact, and regulatory controls. Without action, substantial premium increases and coverage losses are expected in 2026, posing risks to millions of Americans. Proposed extensions or modifications aim to balance those factors but face budgetary scrutiny and political debate[1][2][4].
+
+Citations:
+[1] https://tax.thomsonreuters.com/news/estimated-impact-of-aca-premium-tax-credit-expiration/
+[2] https://bipartisanpolicy.org/issue-brief/enhanced-premium-tax-credits-who-benefits-how-much-and-what-happens-next/
+[3] https://www.irs.gov/affordable-care-act/individuals-and-families/questions-and-answers-on-the-premium-tax-credit
+[4] https://www.commonwealthfund.org/publications/issue-briefs/2025/oct/expiring-premium-tax-credits-lead-340000-jobs-lost-2026
